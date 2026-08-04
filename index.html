@@ -14,14 +14,23 @@
   html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
   body{
     font-family:'Jua',system-ui,sans-serif;color:var(--ink);
+    background:#05070f;
+    margin:0;display:flex;align-items:center;justify-content:center;
+    user-select:none;touch-action:none;
+  }
+  /* 게임은 세로형 프레임 안에서 동작. 폰=꽉참, 넓은창=중앙 고정 */
+  #app{
+    position:relative;display:flex;flex-direction:column;
+    width:100%;height:100%;max-width:min(100vw,calc(100dvh*0.62));
+    height:100dvh;overflow:hidden;
     background:
       repeating-linear-gradient(0deg,var(--line) 0 1px,transparent 1px 44px),
       repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 44px),
       radial-gradient(120% 80% at 50% 0%,#141a45 0%,var(--bg) 70%);
-    display:flex;flex-direction:column;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-    user-select:none;touch-action:none;
+    box-shadow:0 0 60px rgba(95,216,255,.18);
   }
+  @supports not (height:100dvh){ #app{height:100vh} }
   .glow{text-shadow:0 0 6px currentColor,0 0 16px currentColor}
 
   header{flex:none;padding:8px 14px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -72,6 +81,7 @@
 <body>
 
 
+<div id="app">
 <header>
   <div>
     <button class="np" id="btnMenu">❚❚ 일시정지</button>
@@ -90,6 +100,7 @@
   <button class="fab" id="btnHint">💡 <b id="uiHint">3</b></button>
   <button class="fab" id="btnSwap">교체 <b id="uiSwap">3</b> 🔄</button>
   <div class="veil" id="veil"><div class="card" id="card"></div></div>
+</div>
 </div>
 
 <script>
@@ -144,13 +155,16 @@ const FRAME=9;
 function resize(){
   const box=document.getElementById('stage').getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
-  W=box.width; H=box.height;
+  W=Math.max(1,box.width); H=Math.max(1,box.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
   const pad=10;
   BX=pad+FRAME; BW=W-(pad+FRAME)*2;
   R=BW/(COLS*2);
+  // 버블 최대 지름 상한(태블릿/데스크톱에서 과대 방지): 화면 높이 기준
+  const Rmax=Math.min(H*0.052, 46);
+  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=(W-BW)/2; }
   ROWH=R*1.72;
   BY=6+FRAME;
   G.shooterY=H-R*3.3;
@@ -159,7 +173,11 @@ function resize(){
   BH=Math.min(maxBH,R*2+ROWH*(G.maxRows-1)+R*0.35);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
-window.addEventListener('resize',resize);
+let _rz;
+function onResize(){ clearTimeout(_rz); _rz=setTimeout(()=>{ resize(); },120); }
+window.addEventListener('resize',onResize);
+window.addEventListener('orientationchange',onResize);
+if(window.visualViewport) window.visualViewport.addEventListener('resize',onResize);
 
 /* ---------- 상태 ---------- */
 const G={
