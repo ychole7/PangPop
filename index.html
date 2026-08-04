@@ -167,15 +167,15 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=(W-BW)/2; }
   ROWH=R*1.72;
   BY=6+FRAME;
-  // 대포 실측 높이 (drawShooter: w=R*2.9, 원본 340x360)
-  const cannonH=R*2.9*(360/340);            // CANNON_W=2.9
-  const cannonOff=R*0.5;                    // CANNON_OFF
-  const safeBot=R*0.5;                      // 화면 최하단 여백
+  // 대포 실측 높이 (drawShooter의 CANNON_W/OFF와 동일)
+  const cannonH=R*4.0*(360/340);            // CANNON_W=4.0
+  const cannonOff=R*0.4;                    // CANNON_OFF
+  const safeBot=R*0.35;                     // 화면 최하단 여백
   // 대포 하단(sy+cannonOff+cannonH)이 H-safeBot 이 되도록 sy 역산
   G.shooterY=H-safeBot-cannonOff-cannonH;
-  // 목표줄(보드 아래 R*1.7 높이) 자리 남기고 보드가 나머지 세로 채움
-  const targetZone=R*2.2;
-  BH=(G.shooterY-R-targetZone)-BY;
+  // 제시어줄을 보드 바로 아래에 붙임 → 보드는 그만큼 위로
+  const targetZone=R*1.9;                   // 보드~발사영역 사이 제시어 자리
+  BH=(G.shooterY-R*1.3-targetZone)-BY;
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BH=Math.min(BH, R*2+ROWH*(G.maxRows-1)+R*0.4);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
@@ -609,7 +609,7 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
-const CANNON_W=2.9, CANNON_OFF=0.5;   // resize 역산과 공유
+const CANNON_W=4.0, CANNON_OFF=0.4;   // resize 역산과 공유
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
@@ -626,7 +626,7 @@ function drawTargets(){
   const n=G.targets.length;
   const gap=R*.5, bw=Math.min(R*2.6,(BW-gap*(n+1))/n);
   const total=bw*n+gap*(n-1);
-  const y=BY+BH+R*1.15, h=R*1.15;
+  const y=BY+BH+R*0.55, h=R*1.05;
   let x=(W-total)/2;
   ctx.save();
   ctx.font=`${Math.min(bw*0.42,R*0.9)}px Jua, sans-serif`;
