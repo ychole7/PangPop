@@ -189,7 +189,7 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',onResi
 /* ---------- 상태 ---------- */
 const G={
   grid:[],parity:0,stage:1,score:0,combo:0,
-  goal:'과일',pool:[],words:[],targets:[],done:{},
+  mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},
   cur:null,queue:[],
   fly:null,aim:null,dragging:false,
   particles:[],toasts:[],
@@ -216,7 +216,28 @@ const AXES=[
 ];
 
 /* ---------- 스테이지 ---------- */
+function buildFreeStage(){
+  // 일반모드: 목표 없음, 여러 카테고리 섞어 풍부한 단어 풀
+  G.goal='자유';
+  const cats=shuffle([...CATS]);
+  G.words=cats.flatMap(c=>shuffle(DICT_BY_CAT[c]).slice(0,6));
+  const syl=new Set(); for(const w of G.words) for(const ch of w) syl.add(ch);
+  G.pool=[...syl]; mapColors(G.pool);
+  G.targets=[]; G.done={};
+  const rows=Math.min(G.maxRows-3,6+Math.floor(G.stage/3));
+  G.parity=0; G.grid=[];
+  for(let r=0;r<rows;r++){
+    const row=[];
+    for(let c=0;c<cellsIn(r);c++) row.push({s:pick(G.pool)});
+    G.grid.push(row);
+  }
+  for(let i=0;i<3;i++) plantWord(pick(G.words.filter(w=>w.length<=3)),rows);
+  G.cur=smartSyllable(); G.queue=[smartSyllable(),smartSyllable()];
+  G.combo=0;G.dryShots=0;G.shots=0;G.hintCells=null;G.swaps=3;G.hints=3;
+  syncUI();
+}
 function buildStage(){
+  if(G.mode==='free'){ buildFreeStage(); return; }
   G.goal=CATS[(G.stage-1)%CATS.length];
   // 이번 스테이지 목표 단어 수: 3 → 5로 점증
   const nTarget=Math.min(5,3+Math.floor((G.stage-1)/2));
@@ -284,7 +305,8 @@ function lineOf(c0,r0,ax){
   return cells;
 }
 function findWord(c0,r0,s){
-  let best=null;
+  // 후보 전부 수집
+  const cands=[];
   for(const ax of AXES){
     const cells=lineOf(c0,r0,ax);
     const str=cells.map(([c,r])=>(c===c0&&r===r0)?s:at(c,r).s).join('');
@@ -292,12 +314,19 @@ function findWord(c0,r0,s){
     for(let len=Math.min(MAXW,str.length);len>=2;len--){
       for(let st=Math.max(0,idx-len+1);st<=Math.min(idx,str.length-len);st++){
         const w=str.substr(st,len);
-        if(DICT.has(w)&&(!best||len>best.word.length))
-          best={word:w,cells:cells.slice(st,st+len),cat:DICT.get(w)};
+        if(DICT.has(w)) cands.push({word:w,cells:cells.slice(st,st+len),cat:DICT.get(w)});
       }
     }
   }
-  return best;
+  if(!cands.length) return null;
+  if(G.mode==='theme'){
+    // 주제모드: 아직 못 만든 목표 단어를 최우선, 그다음 최장
+    const targetHit=cands.filter(c=>c.word in G.done && !G.done[c.word]);
+    if(targetHit.length){ targetHit.sort((a,b)=>b.word.length-a.word.length); return targetHit[0]; }
+  }
+  // 일반모드(또는 목표 없음): 최장 우선
+  cands.sort((a,b)=>b.word.length-a.word.length);
+  return cands[0];
 }
 function openCells(){
   const out=[],seen=new Set();
@@ -326,7 +355,7 @@ function smartSyllable(){
   if(Math.random()<0.75){
     for(const s of shuffle(G.pool)){
       const hit=completionsFor(s);
-      if(hit.length&&(hit.some(h=>h.cat===G.goal)||Math.random()<0.5))return s;
+      if(hit.length){ if(G.mode==='free') return s; if(hit.some(h=>h.cat===G.goal)||Math.random()<0.5) return s; }
     }
   }
   return pick(G.pool);
@@ -386,7 +415,7 @@ function resolve(c,r){
   const hit=findWord(c,r,G.grid[r][c].s);
   if(hit){
     G.combo++; G.dryShots=0;
-    const bonus=hit.cat===G.goal?2:1;
+    const bonus=(G.mode==='theme'&&hit.cat===G.goal)?2:1;
     const gained=hit.word.length*hit.word.length*100*Math.min(G.combo,5)*bonus;
     G.score+=gained;
     if(hit.word in G.done && !G.done[hit.word]) G.done[hit.word]=true;
@@ -442,8 +471,11 @@ function checkState(){
   for(let r=0;r<G.grid.length;r++)
     for(let c=0;c<cellsIn(r);c++)
       if(at(c,r)){count++;lowest=Math.max(lowest,r);}
-  const allDone=G.targets.length && G.targets.every(w=>G.done[w]);
-  if(allDone || count===0){win();return;}
+  if(count===0){win();return;}
+  if(G.mode==='theme'){
+    const allDone=G.targets.length && G.targets.every(w=>G.done[w]);
+    if(allDone){win();return;}
+  }
   if(cy(lowest)+R>BY+BH) lose();
 }
 
@@ -764,14 +796,24 @@ document.getElementById('btnHint').onclick=()=>{
 document.getElementById('btnMenu').onclick=()=>{
   if(veil.classList.contains('on'))return;
   G.locked=true;
+  const info = G.mode==='free'
+    ? `<p>일반 모드 · 스테이지 ${G.stage}</p>`
+    : `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p>
+       <div>${G.targets.map(w=>`<span class="chip" style="${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
   show(`<h2>메뉴</h2>
-    <p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p>
-    <div>${G.targets.map(w=>`<span class="chip" style="${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>
+    ${info}
     <button class="btn" id="go">이어서 하기</button>
-    <p style="margin-top:12px"><a href="#" id="restart" style="color:#c98a5c">처음부터 다시</a></p>`);
+    <p style="margin-top:12px;font-size:14px">
+      <a href="#" id="switch" style="color:#7fd4ff">${G.mode==='free'?'주제 모드로 전환':'일반 모드로 전환'}</a>
+      &nbsp;·&nbsp;
+      <a href="#" id="restart" style="color:#ff9a5c">처음부터</a>
+    </p>`);
   document.getElementById('go').onclick=()=>{hide();G.locked=false;};
+  document.getElementById('switch').onclick=ev=>{
+    ev.preventDefault();hide();G.mode=(G.mode==='free'?'theme':'free');startGame();
+  };
   document.getElementById('restart').onclick=ev=>{
-    ev.preventDefault();hide();G.locked=false;G.stage=1;G.score=0;buildStage();
+    ev.preventDefault();hide();startGame();
   };
 };
 
@@ -779,7 +821,7 @@ document.getElementById('btnMenu').onclick=()=>{
 function syncUI(){
   document.getElementById('uiStage').textContent=G.stage;
   document.getElementById('uiScore').textContent=G.score.toLocaleString();
-  document.getElementById('uiGoal').textContent=G.goal;
+  document.getElementById('uiGoal').textContent=(G.mode==='free'?'일반':G.goal);
   document.getElementById('uiCombo').textContent='x'+Math.max(1,Math.min(G.combo,5));
   document.getElementById('uiSwap').textContent=G.swaps;
   document.getElementById('uiHint').textContent=G.hints;
@@ -793,11 +835,17 @@ function show(html){card.innerHTML=html;veil.classList.add('on');}
 function hide(){veil.classList.remove('on');}
 function win(){
   G.locked=true;G.score+=1000;
-  const nextGoal=CATS[(G.stage)%CATS.length];
+  let extra='';
+  if(G.mode==='theme'){
+    const nextGoal=CATS[(G.stage)%CATS.length];
+    extra=`<p>목표 단어를 모두 만들었어요 🎉</p>
+      <p style="margin-top:8px;font-size:14px;opacity:.85">다음 주제: <b>${nextGoal}</b></p>`;
+  }else{
+    extra=`<p>버블을 모두 터뜨렸어요 🎉</p>`;
+  }
   show(`<h2>스테이지 ${G.stage} 완료!</h2>
-    <p>목표 단어를 모두 만들었어요 🎉</p>
+    ${extra}
     <p>점수 <b>${G.score.toLocaleString()}</b></p>
-    <p style="margin-top:8px;font-size:14px;opacity:.85">다음 주제: <b>${nextGoal}</b></p>
     <button class="btn" id="go">다음 스테이지</button>`);
   document.getElementById('go').onclick=()=>{G.stage++;hide();G.locked=false;buildStage();};
 }
@@ -811,11 +859,15 @@ function lose(){
 function intro(){
   show(`<h2>낱글자 팡팡!</h2>
     <p>버블을 쏘아 <b>가로·대각선</b>으로<br>낱글자를 이어 단어를 만들면 팡!</p>
-    <p style="margin-top:10px">이번 주제는 <b>${G.goal}</b><br>아래 단어를 모두 만들어보세요</p>
-    <div>${G.targets.map(w=>`<span class="chip">${w}</span>`).join('')}</div>
-    <button class="btn" id="go">시작하기</button>`);
-  document.getElementById('go').onclick=()=>{hide();G.locked=false;};
+    <p style="margin-top:14px">모드를 골라주세요</p>
+    <button class="btn" id="mFree" style="border-color:#ff8fdc;text-shadow:0 0 10px #ff8fdc;box-shadow:0 0 16px rgba(255,143,220,.5),inset 0 0 14px rgba(255,143,220,.22);display:block;margin:12px auto 0">🎯 일반 모드</button>
+    <p style="font-size:13px;opacity:.7;margin:4px 0 0">아무 단어나 만들며 점수 쌓기</p>
+    <button class="btn" id="mTheme" style="display:block;margin:14px auto 0">📚 주제 모드</button>
+    <p style="font-size:13px;opacity:.7;margin:4px 0 0">주제별 목표 단어 완성하기</p>`);
+  document.getElementById('mFree').onclick=()=>{ G.mode='free'; hide(); startGame(); };
+  document.getElementById('mTheme').onclick=()=>{ G.mode='theme'; hide(); startGame(); };
 }
+function startGame(){ G.stage=1; G.score=0; buildStage(); G.locked=false; }
 
 /* ---------- 유틸 ---------- */
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
@@ -823,7 +875,11 @@ function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Ma
 
 /* ---------- 시작 ---------- */
 function boot(){
-  resize(); buildStage(); G.locked=true; intro(); requestAnimationFrame(tick);
+  resize();
+  // 모드 선택 전: 배경만 보이도록 빈 상태로 시작
+  G.grid=[]; G.targets=[]; G.cur=null; G.queue=[];
+  G.locked=true; intro();
+  requestAnimationFrame(tick);
   loadAssets().then(()=>{ BOARDLAYER=null; });
 }
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(boot); else window.addEventListener('load',boot);
