@@ -167,10 +167,17 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=(W-BW)/2; }
   ROWH=R*1.72;
   BY=6+FRAME;
-  G.shooterY=H-R*3.3;
-  const maxBH=G.shooterY-R*1.9-BY;
-  G.maxRows=Math.max(6,Math.min(10,Math.floor((maxBH-R*3.2)/ROWH)+1));
-  BH=Math.min(maxBH,R*2+ROWH*(G.maxRows-1)+R*0.35);
+  // 대포 실측 높이 (drawShooter: w=R*2.9, 원본 340x360)
+  const cannonH=R*2.9*(360/340);            // CANNON_W=2.9
+  const cannonOff=R*0.5;                    // CANNON_OFF
+  const safeBot=R*0.5;                      // 화면 최하단 여백
+  // 대포 하단(sy+cannonOff+cannonH)이 H-safeBot 이 되도록 sy 역산
+  G.shooterY=H-safeBot-cannonOff-cannonH;
+  // 목표줄(보드 아래 R*1.7 높이) 자리 남기고 보드가 나머지 세로 채움
+  const targetZone=R*2.2;
+  BH=(G.shooterY-R-targetZone)-BY;
+  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
+  BH=Math.min(BH, R*2+ROWH*(G.maxRows-1)+R*0.4);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 let _rz;
@@ -570,11 +577,12 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
+const CANNON_W=2.9, CANNON_OFF=0.5;   // resize 역산과 공유
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
-    const w=R*3.9, h=w*(img.height/img.width);
-    ctx.drawImage(img, x-w/2, sy+R*.45, w, h);
+    const w=R*CANNON_W, h=w*(img.height/img.width);
+    ctx.drawImage(img, x-w/2, sy+R*CANNON_OFF, w, h);
   }
   if(!G.fly&&G.cur){
     const bob=Math.sin(now/420)*R*.05;
