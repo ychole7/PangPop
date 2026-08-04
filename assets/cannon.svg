@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+<defs>
+  <filter id="ng2" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="2.5" result="b1"/>
+    <feGaussianBlur stdDeviation="7" result="b2"/>
+    <feGaussianBlur stdDeviation="15" result="b3"/>
+    <feMerge>
+      <feMergeNode in="b3"/><feMergeNode in="b2"/>
+      <feMergeNode in="b1"/><feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+</defs>
+<g filter="url(#ng2)" fill="none" stroke="#5fd8ff" stroke-width="3.2"
+   stroke-linecap="round" stroke-linejoin="round">
+  <!-- 드럼 상단 -->
+  <ellipse cx="150" cy="92" rx="80" ry="27"/>
+  <ellipse cx="150" cy="92" rx="63" ry="20" stroke-width="2.4" opacity=".85"/>
+  <!-- 몸통 -->
+  <path d="M70 92 L80 206"/>
+  <path d="M230 92 L220 206"/>
+  <ellipse cx="150" cy="206" rx="70" ry="23"/>
+  <!-- 삼각 와이어프레임 -->
+  <polyline points="80,104 106,200 120,104 146,200 160,104 186,200 200,104 220,196"
+            stroke-width="2.2" opacity=".9"/>
+  <polyline points="220,104 194,200 180,104 154,200 140,104 114,200 100,104 80,196"
+            stroke-width="2.2" opacity=".9"/>
+  <path d="M76 148 L224 148" stroke-width="2" opacity=".55"/>
+  <!-- 바퀴 -->
+  <circle cx="56" cy="224" r="36"/>
+  <circle cx="56" cy="224" r="13" stroke-width="2.4"/>
+  <circle cx="244" cy="224" r="36"/>
+  <circle cx="244" cy="224" r="13" stroke-width="2.4"/>
+  <path d="M92 224 L208 224" stroke-width="2.6"/>
+</g>
+</svg>
