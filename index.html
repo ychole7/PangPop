@@ -178,11 +178,12 @@ function resize(){
   // ── 시안 실측 비율(IMG_0430) ──
   // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
   G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
-  // 대포 상단 (drawShooter: sy + R*CANNON_OFF, CANNON_OFF=-0.3)
-  const cannonTop=G.shooterY-R*0.3;
-  // 보드 하단 = 대포 상단 끝에 맞춤 (박스 아랫변이 대포 시작점)
-  BH=(cannonTop-R*0.3)-BY;
-  G.maxRows=6;                                // 버블 그리드 6줄
+  // 대포 이미지 상단 (drawShooter: sy + R*CANNON_OFF)
+  const cannonImgTop=G.shooterY+R*(-1.55);
+  // 발사구(어깨)는 이미지 상단에서 32% 지점 → 발사버블 바로 아래
+  // 보드 하단 = 대포 발사구 근처 (박스 아랫변)
+  BH=(G.shooterY-R*0.5)-BY;                    // 보드 하단을 발사버블 살짝 위로
+  G.maxRows=6;
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 let _rz;
@@ -618,7 +619,7 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
-const CANNON_W=8.2, CANNON_OFF=-0.3;   // 시안 실측: 포구가 발사버블 감쌈
+const CANNON_W=7.6, CANNON_OFF=-1.55;  // 발사버블 바로 아래 밀착
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
