@@ -359,11 +359,19 @@ function completionsFor(s){
   return res;
 }
 function smartSyllable(){
-  if(Math.random()<0.75){
-    for(const s of shuffle(G.pool)){
+  // 완성 가능한 글자를 훨씬 자주 제공 (체감 난이도 하향)
+  if(Math.random()<0.92){
+    const cands=shuffle(G.pool);
+    let fallback=null;
+    for(const s of cands){
       const hit=completionsFor(s);
-      if(hit.length){ if(G.mode==='free') return s; if(hit.some(h=>h.cat===G.goal)||Math.random()<0.5) return s; }
+      if(hit.length){
+        if(G.mode==='free') return s;
+        if(!fallback) fallback=s;              // 아무 완성이나 되는 첫 후보 저장
+        if(hit.some(h=>h.cat===G.goal)) return s;  // 목표 카테고리면 즉시 채택
+      }
     }
+    if(fallback) return fallback;               // 목표 매칭 없어도 뭐라도 완성되면 그걸로
   }
   return pick(G.pool);
 }
