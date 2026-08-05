@@ -178,12 +178,10 @@ function resize(){
   // ── 시안 실측 비율(IMG_0430) ──
   // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
   G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
-  // 대포 이미지 상단 (drawShooter: sy + R*CANNON_OFF)
-  const cannonImgTop=G.shooterY+R*(-1.55);
-  // 발사구(어깨)는 이미지 상단에서 32% 지점 → 발사버블 바로 아래
-  // 보드 하단 = 대포 발사구 근처 (박스 아랫변)
-  BH=(G.shooterY-R*0.5)-BY;                    // 보드 하단을 발사버블 살짝 위로
-  G.maxRows=6;
+  // 보드 하단: 발사버블 살짝 위 (발사버블은 보드 안 최하단에서 출발)
+  BH=(G.shooterY+R*0.6)-BY;                    // 발사버블이 보드 안에 포함되게
+  // maxRows: 보드 전체 높이에 맞게 (발사버블 자리까지 채울 수 있음)
+  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 let _rz;
@@ -230,7 +228,7 @@ function buildFreeStage(){
   const syl=new Set(); for(const w of G.words) for(const ch of w) syl.add(ch);
   G.pool=[...syl]; mapColors(G.pool);
   G.targets=[]; G.done={};
-  const rows=Math.min(G.maxRows,6);
+  const rows=Math.min(G.maxRows,4);
   G.parity=0; G.grid=[];
   for(let r=0;r<rows;r++){
     const row=[];
@@ -267,7 +265,7 @@ function buildStage(){
   G.pool=[...syl];
   mapColors(G.pool);
 
-  const rows=Math.min(G.maxRows,5+Math.floor(G.stage/2));
+  const rows=Math.min(G.maxRows,4+Math.floor(G.stage/2));
   G.parity=0; G.grid=[];
   for(let r=0;r<rows;r++){
     const row=[];
