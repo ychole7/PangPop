@@ -178,9 +178,9 @@ function resize(){
   // ── 시안 실측 비율(IMG_0430) ──
   // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
   G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
-  // 보드 하단: 발사버블 살짝 위 (발사버블은 보드 안 최하단에서 출발)
-  BH=(G.shooterY+R*0.6)-BY;                    // 발사버블이 보드 안에 포함되게
-  // maxRows: 보드 전체 높이에 맞게 (발사버블 자리까지 채울 수 있음)
+  // 발사버블 중심이 보드 하단 선에 딱 걸치게
+  BH=G.shooterY-BY;
+  // maxRows: 보드 높이에 맞게
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
@@ -618,7 +618,7 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
-const CANNON_W=6.4, CANNON_OFF=-0.55;  // PNG 대포: 발사버블 바로 아래
+const CANNON_W=6.4, CANNON_OFF=0.35;   // PNG 대포: 발사버블 하단에 밀착
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
