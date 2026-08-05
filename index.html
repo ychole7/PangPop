@@ -221,10 +221,13 @@ const AXES=[
 
 /* ---------- 스테이지 ---------- */
 function buildFreeStage(){
-  // 일반모드: 목표 없음, 여러 카테고리 섞어 풍부한 단어 풀
+  // 일반모드: 목표 없음. 매 스테이지 5개 카테고리 전체를 순환해 폭넓게 사용
   G.goal='자유';
   const cats=shuffle([...CATS]);
-  G.words=cats.flatMap(c=>shuffle(DICT_BY_CAT[c]).slice(0,6));
+  // 카테고리당 최대 14개(사전 규모 30~38개 중 다수 커버), 매판 랜덤이라 스테이지마다 다른 단어 조합
+  G.words=cats.flatMap(c=>shuffle(DICT_BY_CAT[c]).slice(0,14));
+  // 보너스 합성어도 가끔 섞어 손맛 추가
+  if(Math.random()<0.6){ const b=shuffle(BONUS_WORDS); G.words.push(...b.slice(0,3)); }
   const syl=new Set(); for(const w of G.words) for(const ch of w) syl.add(ch);
   G.pool=[...syl]; mapColors(G.pool);
   G.targets=[]; G.done={};
