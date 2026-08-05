@@ -7,13 +7,13 @@
 <title>낱글자 팡팡!</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
   :root{ --bg:#0b0e2a; --line:rgba(90,200,255,.10); --cyan:#5fd8ff; --ink:#bfe9ff; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
   body{
-    font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);font-weight:700;
+    font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:700;
     background:#05070f;
     margin:0;display:flex;align-items:center;justify-content:center;
     user-select:none;touch-action:none;
@@ -40,7 +40,7 @@
   .hl.pink b{color:#fff;text-shadow:0 0 10px #ff8fdc,0 0 22px #ff8fdc}
   .right{text-align:right}
   .np{background:transparent;border:2px solid #c77bff;border-radius:999px;
-    padding:7px 15px;font-family:'Noto Sans KR',sans-serif;font-weight:700;font-size:15px;color:#f0d8ff;
+    padding:7px 15px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;color:#f0d8ff;
     box-shadow:0 0 10px rgba(199,123,255,.7),inset 0 0 10px rgba(199,123,255,.35);
     text-shadow:0 0 8px #c77bff;margin-bottom:6px}
   .np:active{transform:translateY(2px)}
@@ -60,7 +60,7 @@
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
   .fab{position:absolute;left:14px;background:transparent;border:2px solid var(--cyan);
-    border-radius:999px;color:#eaf9ff;font-family:'Noto Sans KR',sans-serif;font-weight:700;
+    border-radius:999px;color:#eaf9ff;font-family:'Pretendard',sans-serif;font-weight:700;
     box-shadow:0 0 12px rgba(95,216,255,.65),inset 0 0 12px rgba(95,216,255,.25);
     text-shadow:0 0 8px var(--cyan);display:flex;align-items:center;justify-content:center;gap:6px}
   .fab:active{transform:translateY(2px)}
@@ -78,7 +78,7 @@
   .card p{margin:5px 0;font-size:15px;color:#a9d8f5;line-height:1.55}
   .card p b{color:#fff;text-shadow:0 0 10px #5fd8ff}
   .btn{margin-top:16px;background:transparent;border:2px solid #7cffb2;border-radius:999px;
-    padding:12px 30px;font-family:'Noto Sans KR',sans-serif;font-weight:900;font-size:19px;color:#eafff3;
+    padding:12px 30px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:19px;color:#eafff3;
     text-shadow:0 0 10px #7cffb2;box-shadow:0 0 16px rgba(124,255,178,.6),inset 0 0 14px rgba(124,255,178,.25)}
   .btn:active{transform:translateY(3px)}
   .chip{display:inline-block;border:1.5px solid #ff8fdc;border-radius:999px;padding:4px 12px;margin:3px;
@@ -516,7 +516,7 @@ function blip(){
 }
 
 /* ---------- 에셋 ---------- */
-const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.svg' };
+const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.png' };
 const ASSETS={};
 function loadAssets(){
   return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{
@@ -559,7 +559,7 @@ function drawBubbleRaw(x,y,r,s,glow){
 
   // 글자: 글로우 한 겹만 뒤에 깔고, 마지막은 블러 0으로 또렷하게
   ctx.save();
-  ctx.font=`${r*1.02}px 'Black Han Sans', sans-serif`;
+  ctx.font=`800 ${r*1.04}px 'Pretendard', sans-serif`;
   ctx.textAlign='center';ctx.textBaseline='middle';
   const ty=y+r*.06, hal=glow?'#ffe9a0':c1;
   // 글로우 한 겹(뒤) + 선명한 흰 글자(앞) — 겹쳐찍기 없이 균일
@@ -570,6 +570,7 @@ function drawBubbleRaw(x,y,r,s,glow){
   ctx.restore();
 }
 const SPR=new Map();
+let FONTS_READY=false;
 function sprite(s,r,glow){
   const key=s+'|'+r+'|'+(glow?1:0);
   let c=SPR.get(key); if(c)return c;
@@ -579,8 +580,8 @@ function sprite(s,r,glow){
   const g2=c.getContext('2d'); g2.setTransform(DPR,0,0,DPR,0,0);
   const keep=ctx; ctx=g2; drawBubbleRaw(pad,pad,r,s,glow); ctx=keep;
   c._pad=pad;
-  if(SPR.size>320)SPR.clear();
-  SPR.set(key,c); return c;
+  if(FONTS_READY){ if(SPR.size>320)SPR.clear(); SPR.set(key,c); }
+  return c;
 }
 function bubble(x,y,r,s,glow){
   r=Math.round(r*2)/2;
@@ -617,7 +618,7 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
-const CANNON_W=7.6, CANNON_OFF=-1.55;  // 발사버블 바로 아래 밀착
+const CANNON_W=6.4, CANNON_OFF=-0.55;  // PNG 대포: 발사버블 바로 아래
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
@@ -640,7 +641,7 @@ function drawQueue(){
   if(!G.queue.length)return;
   const x=W-R*1.8,y=G.shooterY-R*0.1,r=R*.82;
   ctx.save();
-  ctx.font=`${R*.52}px 'Noto Sans KR', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font=`700 ${R*.52}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillStyle='#9fe8ff';ctx.shadowColor='#5fd8ff';ctx.shadowBlur=10;
   ctx.fillText('다음: '+G.queue[0],x,y-r*1.5);
   ctx.restore();
@@ -713,7 +714,7 @@ function draw(now){
     ctx.save();
     ctx.globalAlpha=Math.min(1,b.life*2.2);
     ctx.translate(W/2,BY+R*1.25-(1-b.life)*R*.8);
-    ctx.font=`${fs}px 'Black Han Sans', sans-serif`;
+    ctx.font=`800 ${fs}px 'Pretendard', sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.shadowColor=col;ctx.shadowBlur=fs*.55;
     ctx.fillStyle=col;ctx.fillText(b.text,0,0);ctx.fillText(b.text,0,0);
@@ -726,7 +727,7 @@ function draw(now){
     ctx.globalAlpha=Math.min(1,t.life*1.6);
     ctx.translate(t.x,t.y-(1-t.life)*62);
     const fs=R*.74*(1+(1-t.life)*.25);
-    ctx.font=`${fs}px 'Black Han Sans', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font=`800 ${fs}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillStyle='#fff6d0';ctx.shadowColor='#ffd86f';ctx.shadowBlur=fs*.7;
     ctx.fillText(t.text,0,0);ctx.fillText(t.text,0,0);
     ctx.restore();
@@ -869,14 +870,17 @@ function boot(){
   requestAnimationFrame(tick);
   loadAssets().then(()=>{ BOARDLAYER=null; });
 }
+function markFontsReady(){ FONTS_READY=true; SPR.clear(); BOARDLAYER=null; }
 if(document.fonts&&document.fonts.ready){
-  document.fonts.ready.then(()=>{ boot(); SPR.clear(); BOARDLAYER=null; });
-  // 웹폰트가 늦게 들어와도 캐시 갱신
-  if(document.fonts.load){
-    Promise.all([document.fonts.load("700 20px 'Black Han Sans'"),
-                 document.fonts.load("700 20px 'Noto Sans KR'")]).then(()=>{SPR.clear();BOARDLAYER=null;}).catch(()=>{});
-  }
-} else window.addEventListener('load',boot);
+  boot();
+  // Pretendard 실제 로드 확인 후 캐시 활성화
+  const need=[document.fonts.load("800 20px 'Pretendard'"),
+              document.fonts.load("700 20px 'Pretendard'")];
+  Promise.all(need).then(()=>document.fonts.ready).then(markFontsReady)
+    .catch(()=>{ setTimeout(markFontsReady,800); });
+  // 안전장치: 2초 후엔 무조건 활성화
+  setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000);
+} else { window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); }
 </script>
 </body>
 </html>
