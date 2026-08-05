@@ -175,17 +175,11 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=(W-BW)/2; }
   ROWH=R*1.72;
   BY=6+FRAME;
-  // 대포 실측 (drawShooter의 CANNON_W/OFF와 동일)
-  const CW=5.0, COFF=0.15;
-  const cannonH=R*CW*(360/340);
-  // ── 시안 실측 비율 ──
-  // 보드 하단 = 화면 88%, 대포는 보드 안 하단, 발사버블 중심 ≈ 68%, 그리드는 위 6줄
+  // ── 시안 실측 비율(IMG_0430) ──
+  // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
   BH=H*0.88-BY;                               // 보드: HUD 아래 ~ 화면 88%
-  // 발사버블 중심: 대포 하단(보드 하단 근처)에서 역산
-  // 대포하단 = shooterY + R*COFF + cannonH ≈ BY+BH (보드 하단)
-  G.shooterY=(BY+BH)-R*COFF-cannonH+R*0.9;    // 대포가 보드 안에 딱
-  // 버블 그리드: 상단부터 6줄 고정 (발사버블 위 공간 넉넉)
-  G.maxRows=6;
+  G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
+  G.maxRows=6;                                // 버블 그리드 6줄 (상단부터)
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 let _rz;
@@ -620,7 +614,7 @@ function drawBoardRaw(){
   neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
   drawScenery();
 }
-const CANNON_W=5.0, CANNON_OFF=0.15;  // 보드 안, 발사버블을 포구가 감쌈
+const CANNON_W=8.2, CANNON_OFF=-0.3;   // 시안 실측: 포구가 발사버블 감쌈
 function drawShooter(now){
   const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
   if(img){
@@ -629,7 +623,7 @@ function drawShooter(now){
   }
   if(!G.fly&&G.cur){
     const bob=Math.sin(now/420)*R*.05;
-    bubble(x,sy+bob,R*.94,G.cur);
+    bubble(x,sy+bob,R*.72,G.cur);
   }
 }
 function renderTargetBar(){
@@ -641,7 +635,7 @@ function renderTargetBar(){
 }
 function drawQueue(){
   if(!G.queue.length)return;
-  const x=W-R*1.9,y=G.shooterY+R*0.1,r=R*.80;
+  const x=W-R*1.7,y=G.shooterY-R*0.2,r=R*.68;
   ctx.save();
   ctx.font=`${R*.52}px Jua, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillStyle='#9fe8ff';ctx.shadowColor='#5fd8ff';ctx.shadowBlur=10;
