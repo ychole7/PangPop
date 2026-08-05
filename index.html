@@ -178,15 +178,15 @@ function resize(){
   // 대포 실측 (drawShooter의 CANNON_W/OFF와 동일)
   const CW=5.0, COFF=0.15;
   const cannonH=R*CW*(360/340);
-  const bottomUI=R*2.4;                       // 보드 아래 다음/교체 버튼 영역
-  // 보드는 화면에서 하단 버튼영역만 남기고 채움 (대포는 보드 '안')
-  BH=H-BY-bottomUI;
-  // 발사버블 중심: 보드 하단 안쪽, 대포가 보드 안에 들어오도록
-  // 대포하단(= shooterY+R*COFF+cannonH) 이 보드하단(BY+BH) 근처가 되게
-  G.shooterY=BY+BH-R*COFF-cannonH+R*1.0;      // 대포 대부분이 보드 안
-  // 그리드 행 수: 발사버블 위 공간 기준
-  const gridSpace=(G.shooterY-R*1.4)-BY;
-  G.maxRows=Math.max(6,Math.floor((gridSpace-R*2)/ROWH)+1);
+  const safeBot=R*0.5;                        // 화면 최하단 여백
+  // 발사버블: 대포가 화면 안에 들어오도록 하단에서 역산
+  G.shooterY=H-safeBot-R*COFF-cannonH;
+  // 보드(네모박스): 버블 줄 수에 맞는 '적당한' 높이 — 화면을 다 안 채움
+  // 화면 세로의 약 55%를 넘지 않게, 발사버블보다는 위에서 끝남
+  const maxBoardBot=Math.min(G.shooterY-R*1.6, BY+H*0.56);
+  let rows0=Math.floor((maxBoardBot-BY-R*2)/ROWH)+1;
+  G.maxRows=Math.max(6,Math.min(9,rows0));    // 6~9줄
+  BH=R*2+ROWH*(G.maxRows-1)+R*0.5;            // 보드 높이 = 줄 수 기준 고정
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 let _rz;
@@ -642,7 +642,7 @@ function renderTargetBar(){
 }
 function drawQueue(){
   if(!G.queue.length)return;
-  const x=W-R*1.9,y=BY+BH+R*1.0,r=R*.82;
+  const x=W-R*1.9,y=G.shooterY+R*0.1,r=R*.82;
   ctx.save();
   ctx.font=`${R*.52}px Jua, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillStyle='#9fe8ff';ctx.shadowColor='#5fd8ff';ctx.shadowBlur=10;
