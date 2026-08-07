@@ -33,8 +33,15 @@
   @supports not (height:100dvh){ #app{height:100vh} }
   .glow{text-shadow:0 0 6px currentColor,0 0 16px currentColor}
 
-  header{flex:none;padding:8px 14px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  header{flex:none;padding:6px 12px 2px;display:flex;justify-content:space-between;align-items:center;gap:8px}
   .hl{font-size:17px;line-height:1.35;color:#7fd4ff;text-shadow:0 0 8px rgba(95,216,255,.75)}
+  #goalBar{flex:none;padding:2px 14px 6px;display:flex;align-items:center;gap:10px}
+  #goalBar .glabel{font-size:13px;color:#9fe3ff;white-space:nowrap;text-shadow:0 0 6px rgba(95,216,255,.6)}
+  #goalBar .gtrack{flex:1;height:16px;border:2px solid #ff8fdc;border-radius:999px;overflow:hidden;
+    box-shadow:0 0 10px rgba(255,143,220,.5),inset 0 0 8px rgba(255,143,220,.22);background:rgba(255,143,220,.06)}
+  #goalBar .gtrack i{display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,#ffcf6b,#ff9a5c);box-shadow:0 0 10px #ffb15c;transition:width .3s}
+  #goalBar .gcombo{font-size:13px;color:#ff9fd6;white-space:nowrap;text-shadow:0 0 6px rgba(255,143,220,.6)}
   .hl b{color:#fff;text-shadow:0 0 10px #5fd8ff,0 0 22px #5fd8ff}
   .hl.pink{color:#ff8fdc;text-shadow:0 0 8px rgba(255,143,220,.8)}
   .hl.pink b{color:#fff;text-shadow:0 0 10px #ff8fdc,0 0 22px #ff8fdc}
@@ -60,6 +67,11 @@
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
   #itemBar{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:8px;z-index:2}
+  #trayBtn{position:absolute;left:76px;bottom:12px;z-index:3;width:46px;height:46px;padding:0;
+    border-radius:50%;font-size:19px}
+  #tray{position:absolute;left:76px;bottom:64px;display:flex;flex-direction:column;gap:8px;z-index:2;
+    opacity:0;pointer-events:none;transform:translateY(8px);transition:.18s}
+  #tray.open{opacity:1;pointer-events:auto;transform:translateY(0)}
   .fab{background:transparent;border:2px solid var(--cyan);
     border-radius:999px;color:#eaf9ff;font-family:'Pretendard',sans-serif;font-weight:700;
     box-shadow:0 0 12px rgba(95,216,255,.65),inset 0 0 12px rgba(95,216,255,.25);
@@ -94,20 +106,22 @@
 
 <div id="app">
 <header>
-  <div>
-    <button class="np" id="btnMenu">❚❚ 일시정지</button>
-    <button class="np" id="btnMute" style="margin-left:6px;padding:7px 12px">🔊</button>
-    <button class="np" id="btnShop" style="margin-left:6px;padding:7px 12px">🛒</button>
-    <div class="hl">모드: <b id="uiGoal">과일</b></div>
-    <div class="hl">점수: <b id="uiScore">0</b></div>
-    <div class="hl" style="font-size:13px;opacity:.85">💰 <b id="uiCoins">0</b></div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <button class="np" id="btnMenu" style="padding:7px 12px">❚❚</button>
+    <button class="np" id="btnMute" style="padding:7px 12px">🔊</button>
+    <button class="np" id="btnShop" style="padding:7px 12px">🛒</button>
   </div>
-  <div class="right">
-    <div class="hl pink">콤보: <b id="uiCombo">x1</b></div>
-    <div class="bar"><i id="comboBar"></i></div>
-    <div class="hl" style="font-size:14px;margin-top:6px">스테이지 <b id="uiStage">1</b></div>
+  <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+    <span class="hl" style="font-size:13px">S<b id="uiStage">1</b></span>
+    <span class="hl" style="font-size:13px">🏆<b id="uiScore">0</b></span>
+    <span class="hl" style="font-size:13px">💰<b id="uiCoins">0</b></span>
   </div>
 </header>
+<div id="goalBar">
+  <span class="glabel" id="uiGoal">과일</span>
+  <div class="gtrack"><i id="comboBar" style="width:0%"></i></div>
+  <span class="gcombo">x<b id="uiCombo">1</b></span>
+</div>
 <div id="targetBar"></div>
 
 <div id="stage">
@@ -115,6 +129,9 @@
   <div id="itemBar">
     <button class="fab" id="btnHint">💡 <b id="uiHint">3</b></button>
     <button class="fab" id="btnSwap">🔄 <b id="uiSwap">3</b></button>
+  </div>
+  <button class="fab" id="trayBtn">✨</button>
+  <div id="tray">
     <button class="fab" id="btnBomb">💣 <b id="uiBomb">2</b></button>
     <button class="fab" id="btnRainbow">🌈 <b id="uiRainbow">2</b></button>
   </div>
@@ -934,6 +951,10 @@ document.getElementById('btnHint').onclick=()=>{
   G.hints--; G.hintCells=[[hit[0].c,hit[0].r]];
   toast(hit[0].word,[[hit[0].c,hit[0].r]]);
   syncUI();
+};
+document.getElementById('trayBtn').onclick=()=>{
+  SFX.click();
+  document.getElementById('tray').classList.toggle('open');
 };
 document.getElementById('btnBomb').onclick=()=>{
   if(G.bombs<=0||G.fly||G.locked)return;
