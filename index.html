@@ -252,7 +252,7 @@ const G={
   mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},
   cur:null,queue:[],
   fly:null,aim:null,dragging:false,
-  particles:[],toasts:[],
+  particles:[],toasts:[],waves:[],pops:[],shake:0,flash:0,
   shooterY:0,maxRows:10,
   dryShots:0,swaps:3,hints:3,hintCells:null,bombs:2,rainbows:2,activeItem:null,
   wordsCompleted:0,freeGoal:8,
@@ -278,6 +278,7 @@ const AXES=[
 
 /* ---------- 스테이지 ---------- */
 function buildFreeStage(){
+  G.waves=[]; G.pops=[]; G.shake=0; G.flash=0;
   // 일반모드: 목표 없음. 매 스테이지 5개 카테고리 전체를 순환해 폭넓게 사용
   G.goal='자유';
   const cats=shuffle([...CATS]);
@@ -304,6 +305,7 @@ function buildFreeStage(){
   syncUI();
 }
 function buildStage(){
+  G.waves=[]; G.pops=[]; G.shake=0; G.flash=0;
   if(G.mode==='free'){ buildFreeStage(); return; }
   G.goal=CATS[(G.stage-1)%CATS.length];
   // 이번 스테이지 목표 단어 수: 3 → 5로 점증
@@ -500,9 +502,12 @@ function explodeAt(c,r){
     let n=0;
     for(const [cc,rr] of cells){
       if(!G.grid[rr]||!G.grid[rr][cc])continue;
-      burst(cx(cc,rr),cy(rr),colorOf(G.grid[rr][cc].s)[0]);
+      const col=colorOf(G.grid[rr][cc].s)[0];
+      burst(cx(cc,rr),cy(rr),col);
+      addWave(cx(cc,rr),cy(rr),col,R*3);
       G.grid[rr][cc]=null; n++;
     }
+    addShake(10); flash(0.22);
     G.score += n*80;
     G.combo=0; G.dryShots=0;
     toast('펑! +'+(n*80));
@@ -537,6 +542,7 @@ function settle(f){
     if(b) s=b.s;
   }
   G.grid[r][c]={s,born:performance.now()};
+  addShake(1.5); addWave(cx(c,r),cy(r),colorOf(s)[0],R*1.4);
   resolve(c,r);
 }
 function resolve(c,r){
@@ -551,14 +557,24 @@ function resolve(c,r){
     SAVE.coins=(SAVE.coins||0) + Math.max(2,hit.word.length) + (bonus>1?3:0);
     G.banner={text:hit.word,life:1,bonus:bonus>1};
     SFX.wordComplete(G.combo,bonus>1);
-    toast('+'+gained,hit.cells);
+    // ── juice: 콤보/보너스에 비례한 임팩트 ──
+    const combo=Math.min(G.combo,5);
+    addShake(3+combo*1.2+(bonus>1?3:0));
+    if(combo>=3||bonus>1) flash(0.12+combo*0.03);
+    // 점수 팝업 (터진 자리 중심)
+    let px=hit.cells.reduce((a,[c,r])=>a+cx(c,r),0)/hit.cells.length;
+    let py=hit.cells.reduce((a,[c,r])=>a+cy(r),0)/hit.cells.length;
+    addPop(px,py,'+'+gained, bonus>1?'#ffe08c':'#fff6d0');
+    if(combo>=2) addPop(px,py-R*0.9,'콤보 x'+combo,'#ff9fd6');
     G.locked=true;
     const t0=performance.now();
     for(const [cc,rr] of hit.cells) G.grid[rr][cc].glow=t0;
     setTimeout(()=>{
       for(const [cc,rr] of hit.cells){
         if(!G.grid[rr]||!G.grid[rr][cc])continue;
-        burst(cx(cc,rr),cy(rr),colorOf(G.grid[rr][cc].s)[0]);
+        const col=colorOf(G.grid[rr][cc].s)[0];
+        burst(cx(cc,rr),cy(rr),col);
+        addWave(cx(cc,rr),cy(rr),col);
         G.grid[rr][cc]=null;
       }
       dropFloaters(); G.locked=false; checkState(); syncUI();
@@ -615,6 +631,10 @@ function checkState(){
 }
 
 /* ---------- 이펙트 ---------- */
+function addShake(amt){ G.shake=Math.min(G.shake+amt, 14); }
+function addWave(x,y,col,maxR){ G.waves.push({x,y,col,r:R*0.3,maxR:maxR||R*2.4,life:1}); }
+function addPop(x,y,text,col){ G.pops.push({x,y,text,col:col||'#fff6d0',life:1,vy:-1.2}); }
+function flash(a){ G.flash=Math.max(G.flash,a); }
 function burst(x,y,col){
   for(let i=0;i<14;i++){
     const a=Math.random()*Math.PI*2,sp=1+Math.random()*4.5;
@@ -832,6 +852,11 @@ function trajectory(angle){
 }
 function draw(now){
   ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(G.shake>0.3){
+    const dx=(Math.random()-0.5)*G.shake, dy=(Math.random()-0.5)*G.shake;
+    ctx.translate(dx,dy);
+  }
   drawBoard();
 
   if(G.aim!=null&&!G.fly&&!G.locked){
@@ -892,6 +917,27 @@ function draw(now){
     ctx.fillStyle='#ffffff';ctx.fillText(b.text,0,0);
     ctx.restore();
   }
+  // ── 링 웨이브 ──
+  for(const w of G.waves){
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,w.life)*0.6;
+    ctx.strokeStyle=w.col; ctx.shadowColor=w.col; ctx.shadowBlur=14;
+    ctx.lineWidth=Math.max(1.5,3*w.life);
+    ctx.beginPath(); ctx.arc(w.x,w.y,w.r,0,7); ctx.stroke();
+    ctx.restore();
+  }
+  // ── 점수 팝업 ──
+  for(const p of G.pops){
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,p.life*1.5);
+    ctx.translate(p.x, p.y+(1-p.life)*-30);
+    const fs=R*0.7*(0.85+(1-p.life)*0.35);
+    ctx.font=`800 ${fs}px 'Pretendard', sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=p.col; ctx.shadowColor=p.col; ctx.shadowBlur=fs*0.6;
+    ctx.fillText(p.text,0,0);
+    ctx.restore();
+  }
   for(const t of G.toasts){
     ctx.save();
     ctx.globalAlpha=Math.min(1,t.life*1.6);
@@ -902,6 +948,15 @@ function draw(now){
     ctx.fillText(t.text,0,0);ctx.fillText(t.text,0,0);
     ctx.restore();
   }
+  ctx.restore();  // shake 종료
+  // ── 풀스크린 플래시 ──
+  if(G.flash>0.01){
+    ctx.save();
+    ctx.globalAlpha=G.flash;
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,W,H);
+    ctx.restore();
+  }
 }
 function tick(now){
   stepFly();
@@ -910,6 +965,13 @@ function tick(now){
   if(G.banner){G.banner.life-=.0085;if(G.banner.life<=0)G.banner=null;}
   for(const t of G.toasts)t.life-=.012;
   G.toasts=G.toasts.filter(t=>t.life>0);
+  // juice 감쇠/업데이트
+  G.shake*=0.82; if(G.shake<0.3)G.shake=0;
+  G.flash*=0.86; if(G.flash<0.01)G.flash=0;
+  for(const w of G.waves){ w.r+=(w.maxR-w.r)*0.18; w.life-=0.05; }
+  G.waves=G.waves.filter(w=>w.life>0);
+  for(const p of G.pops){ p.y+=p.vy; p.vy*=0.94; p.life-=0.022; }
+  G.pops=G.pops.filter(p=>p.life>0);
   draw(now);
   requestAnimationFrame(tick);
 }
@@ -1076,6 +1138,7 @@ function win(){
   SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4;
   saveGame(true);
   SFX.stageClear();
+  addShake(8); flash(0.3);
   let extra='';
   if(G.mode==='theme'){
     const nextGoal=CATS[(G.stage)%CATS.length];
