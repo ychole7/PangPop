@@ -947,14 +947,14 @@ document.getElementById('btnMenu').onclick=()=>{
   if(veil.classList.contains('on'))return;
   G.locked=true;
   const info = G.mode==='free'
-    ? `<p>일반 모드 · 스테이지 ${G.stage}</p>`
+    ? `<p>챌린지 모드 · 스테이지 ${G.stage}</p>`
     : `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p>
        <div>${G.targets.map(w=>`<span class="chip" style="${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
   show(`<h2>메뉴</h2>
     ${info}
     <button class="btn" id="go">이어서 하기</button>
     <p style="margin-top:12px;font-size:14px">
-      <a href="#" id="switch" style="color:#7fd4ff">${G.mode==='free'?'주제 모드로 전환':'일반 모드로 전환'}</a>
+      <a href="#" id="switch" style="color:#7fd4ff">${G.mode==='free'?'주제 모드로 전환':'챌린지 모드로 전환'}</a>
       &nbsp;·&nbsp;
       <a href="#" id="restart" style="color:#ff9a5c">처음부터</a>
     </p>`);
@@ -971,7 +971,7 @@ document.getElementById('btnMenu').onclick=()=>{
 function syncUI(){
   document.getElementById('uiStage').textContent=G.stage;
   document.getElementById('uiScore').textContent=G.score.toLocaleString();
-  document.getElementById('uiGoal').textContent=(G.mode==='free'?'일반':G.goal);
+  document.getElementById('uiGoal').textContent=(G.mode==='free'?'챌린지':G.goal);
   document.getElementById('uiCombo').textContent='x'+Math.max(1,Math.min(G.combo,5));
   document.getElementById('uiSwap').textContent=G.swaps;
   document.getElementById('uiHint').textContent=G.hints;
@@ -1020,16 +1020,16 @@ function intro(){
   const hasFree = SAVE.free && (SAVE.free.stage>1 || SAVE.free.score>0);
   const hasTheme = SAVE.theme && (SAVE.theme.stage>1 || SAVE.theme.score>0);
   const bestLine = (SAVE.free.bestScore||SAVE.theme.bestScore)
-    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 · 일반 ${(SAVE.free.bestScore||0).toLocaleString()} / 주제 ${(SAVE.theme.bestScore||0).toLocaleString()}</p>`
+    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 · 주제 ${(SAVE.theme.bestScore||0).toLocaleString()} / 챌린지 ${(SAVE.free.bestScore||0).toLocaleString()}</p>`
     : '';
   show(`<h2>낱글자 팡팡!</h2>
     <p>버블을 쏘아 <b>가로·대각선</b>으로<br>낱글자를 이어 단어를 만들면 팡!</p>
     ${bestLine}
     <p style="margin-top:14px">모드를 골라주세요</p>
-    <button class="btn" id="mFree" style="border-color:#ff8fdc;text-shadow:0 0 10px #ff8fdc;box-shadow:0 0 16px rgba(255,143,220,.5),inset 0 0 14px rgba(255,143,220,.22);display:block;margin:12px auto 0">🎯 일반 모드${hasFree?` <span style="font-size:12px;opacity:.8">이어하기 S${SAVE.free.stage}</span>`:''}</button>
-    <p style="font-size:13px;opacity:.7;margin:4px 0 0">아무 단어나 만들며 점수 쌓기</p>
-    <button class="btn" id="mTheme" style="display:block;margin:14px auto 0">📚 주제 모드${hasTheme?` <span style="font-size:12px;opacity:.8">이어하기 S${SAVE.theme.stage}</span>`:''}</button>
-    <p style="font-size:13px;opacity:.7;margin:4px 0 0">주제별 목표 단어 완성하기</p>
+    <button class="btn" id="mTheme" style="display:block;margin:12px auto 0;font-size:20px;padding:14px 32px">📚 주제 모드${hasTheme?` <span style="font-size:12px;opacity:.8">이어하기 S${SAVE.theme.stage}</span>`:''}</button>
+    <p style="font-size:13px;opacity:.7;margin:4px 0 0">주제별 목표 단어를 완성하며 배우기</p>
+    <button class="btn" id="mFree" style="border-color:#ff8fdc;text-shadow:0 0 8px #ff8fdc;box-shadow:0 0 12px rgba(255,143,220,.4),inset 0 0 10px rgba(255,143,220,.18);display:block;margin:16px auto 0;font-size:15px;padding:9px 20px;opacity:.85">🎯 챌린지 모드${hasFree?` <span style="font-size:11px;opacity:.8">이어하기 S${SAVE.free.stage}</span>`:''}</button>
+    <p style="font-size:12px;opacity:.6;margin:4px 0 0">아무 단어나 자유롭게, 빠르게 점수 쌓기</p>
     ${(hasFree||hasTheme)?'<p style="font-size:12px;opacity:.55;margin-top:10px">버튼을 누르면 저장된 진행에서 이어집니다</p>':''}`);
   document.getElementById('mFree').onclick=()=>{ SFX.click(); G.mode='free'; hide(); startGame(hasFree); };
   document.getElementById('mTheme').onclick=()=>{ SFX.click(); G.mode='theme'; hide(); startGame(hasTheme); };
