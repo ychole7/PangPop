@@ -97,8 +97,10 @@
   <div>
     <button class="np" id="btnMenu">❚❚ 일시정지</button>
     <button class="np" id="btnMute" style="margin-left:6px;padding:7px 12px">🔊</button>
+    <button class="np" id="btnShop" style="margin-left:6px;padding:7px 12px">🛒</button>
     <div class="hl">모드: <b id="uiGoal">과일</b></div>
     <div class="hl">점수: <b id="uiScore">0</b></div>
+    <div class="hl" style="font-size:13px;opacity:.85">💰 <b id="uiCoins">0</b></div>
   </div>
   <div class="right">
     <div class="hl pink">콤보: <b id="uiCombo">x1</b></div>
@@ -529,6 +531,7 @@ function resolve(c,r){
     G.score+=gained;
     if(hit.word in G.done && !G.done[hit.word]) G.done[hit.word]=true;
     G.wordsCompleted++;
+    SAVE.coins=(SAVE.coins||0) + Math.max(2,hit.word.length) + (bonus>1?3:0);
     G.banner={text:hit.word,life:1,bonus:bonus>1};
     SFX.wordComplete(G.combo,bonus>1);
     toast('+'+gained,hit.cells);
@@ -645,7 +648,8 @@ const SFX={
   stageClear(){
     [0,1,2,3].forEach(i=>tone(523.25*Math.pow(2,i/12*4), null, 0.28,0.08,'triangle',i*0.11));
   },
-  gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); }
+  gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); },
+  buy(){ tone(700,1100,0.14,0.07,'triangle'); tone(1050,1400,0.16,0.06,'triangle',0.06); }
 };
 function blip(){ SFX.pop(); }
 
@@ -957,7 +961,8 @@ document.getElementById('btnMenu').onclick=()=>{
       <a href="#" id="switch" style="color:#7fd4ff">${G.mode==='free'?'주제 모드로 전환':'챌린지 모드로 전환'}</a>
       &nbsp;·&nbsp;
       <a href="#" id="restart" style="color:#ff9a5c">처음부터</a>
-    </p>`);
+    </p>
+    <button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 8px #ffd86f;box-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
   document.getElementById('go').onclick=()=>{hide();G.locked=false;};
   document.getElementById('switch').onclick=ev=>{
     ev.preventDefault();hide();G.mode=(G.mode==='free'?'theme':'free');startGame();
@@ -965,11 +970,17 @@ document.getElementById('btnMenu').onclick=()=>{
   document.getElementById('restart').onclick=ev=>{
     ev.preventDefault();hide();startGame();
   };
+  document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
+};
+document.getElementById('btnShop').onclick=()=>{
+  if(veil.classList.contains('on'))return;
+  G.locked=true; SFX.click(); openShop();
 };
 
 /* ---------- UI ---------- */
 function syncUI(){
   document.getElementById('uiStage').textContent=G.stage;
+  const uc=document.getElementById('uiCoins'); if(uc) uc.textContent=(SAVE.coins||0).toLocaleString();
   document.getElementById('uiScore').textContent=G.score.toLocaleString();
   document.getElementById('uiGoal').textContent=(G.mode==='free'?'챌린지':G.goal);
   document.getElementById('uiCombo').textContent='x'+Math.max(1,Math.min(G.combo,5));
@@ -991,8 +1002,58 @@ function syncUI(){
 const veil=document.getElementById('veil'),card=document.getElementById('card');
 function show(html){card.innerHTML=html;veil.classList.add('on');}
 function hide(){veil.classList.remove('on');}
+const SHOP_ITEMS=[
+  {id:'hint3',   icon:'💡', label:'힌트 +3',   desc:'막힐 때 자리를 알려줘요',        price:30, apply:()=>{G.hints+=3;}},
+  {id:'swap3',   icon:'🔄', label:'교체 +3',   desc:'글자를 다른 글자로 바꿔요',      price:20, apply:()=>{G.swaps+=3;}},
+  {id:'bomb2',   icon:'💣', label:'폭탄 +2',   desc:'주변까지 한번에 터뜨려요',       price:50, apply:()=>{G.bombs+=2;}},
+  {id:'rainbow2',icon:'🌈', label:'무지개 +2', desc:'가장 좋은 글자로 자동 발사',     price:60, apply:()=>{G.rainbows+=2;}},
+  {id:'revive1', icon:'❤️', label:'부활권 +1', desc:'게임오버 시 이어서 플레이',      price:80, apply:()=>{SAVE.revives=(SAVE.revives||0)+1;}}
+];
+function openShop(){
+  show(shopHTML());
+  wireShop();
+}
+function shopHTML(){
+  const coins=SAVE.coins||0;
+  const rows=SHOP_ITEMS.map(it=>{
+    const affordable=coins>=it.price;
+    const owned = it.id==='revive1' ? `<span style="font-size:12px;opacity:.7">보유 ${SAVE.revives||0}</span>` : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(95,216,255,.15)">
+      <div style="font-size:24px">${it.icon}</div>
+      <div style="flex:1;text-align:left">
+        <div style="font-size:15px;color:#eafcff">${it.label} ${owned}</div>
+        <div style="font-size:12px;opacity:.65">${it.desc}</div>
+      </div>
+      <button class="btn" data-id="${it.id}" style="margin:0;padding:7px 14px;font-size:13px;${affordable?'':'opacity:.35'}"
+        ${affordable?'':'disabled'}>💰${it.price}</button>
+    </div>`;
+  }).join('');
+  return `<h2>🛒 상점</h2>
+    <p style="font-size:14px;margin-top:-4px">보유 코인 <b style="color:#ffe08c">💰${coins.toLocaleString()}</b></p>
+    <div style="max-height:52vh;overflow-y:auto;margin-top:8px">${rows}</div>
+    <button class="btn" id="shopClose" style="margin-top:14px">닫기</button>`;
+}
+function wireShop(){
+  card.querySelectorAll('button[data-id]').forEach(btn=>{
+    btn.onclick=()=>{
+      const it=SHOP_ITEMS.find(x=>x.id===btn.dataset.id);
+      if(!it) return;
+      const coins=SAVE.coins||0;
+      if(coins<it.price) return;
+      SAVE.coins=coins-it.price;
+      it.apply();
+      saveGame(true);
+      SFX.buy();
+      syncUI();
+      show(shopHTML()); wireShop();  // 갱신된 목록으로 다시 그림
+    };
+  });
+  document.getElementById('shopClose').onclick=()=>{ SFX.click(); hide(); G.locked=false; };
+}
 function win(){
   G.locked=true;G.score+=1000;
+  SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4;
+  saveGame(true);
   SFX.stageClear();
   let extra='';
   if(G.mode==='theme'){
@@ -1008,12 +1069,30 @@ function win(){
     <button class="btn" id="go">다음 스테이지</button>`);
   document.getElementById('go').onclick=()=>{SFX.click();G.stage++;hide();G.locked=false;buildStage();saveGame(true);};
 }
+function reviveBoard(){
+  // 바닥에 가장 가까운(위험한) 줄부터 2줄 제거해 숨통 트기
+  for(let i=0;i<2 && G.grid.length>0;i++) G.grid.pop();
+  BOARDLAYER=null;
+  toast('❤️ 부활! 아래 두 줄이 사라졌어요');
+  checkState();
+  syncUI();
+}
 function lose(){
   G.locked=true;
   SFX.gameOver();
+  const canRevive=(SAVE.revives||0)>0;
   show(`<h2>아쉬워요!</h2>
     <p>버블이 바닥까지 내려왔어요.<br>스테이지 ${G.stage} · ${G.score.toLocaleString()}점</p>
-    <button class="btn" id="go">다시 하기</button>`);
+    ${canRevive?`<button class="btn" id="revive" style="border-color:#ff6b81;color:#ffe0e6;text-shadow:0 0 10px #ff6b81;box-shadow:0 0 16px rgba(255,107,129,.55),inset 0 0 14px rgba(255,107,129,.25);margin-top:14px">❤️ 부활권 사용 (보유 ${SAVE.revives})</button>`:''}
+    <button class="btn" id="go" style="margin-top:${canRevive?10:16}px">다시 하기</button>`);
+  if(canRevive){
+    document.getElementById('revive').onclick=()=>{
+      SFX.buy();
+      SAVE.revives--; saveGame(true);
+      hide(); G.locked=false;
+      reviveBoard();
+    };
+  }
   document.getElementById('go').onclick=()=>{hide();G.locked=false;G.score=0;buildStage();};
 }
 function intro(){
@@ -1054,13 +1133,15 @@ function loadSave(){
     const d=JSON.parse(raw);
     if(!d.free) d.free={stage:1,score:0,bestScore:0,bestStage:1};
     if(!d.theme) d.theme={stage:1,score:0,bestScore:0,bestStage:1};
+    if(typeof d.coins!=='number') d.coins=0;
+    if(typeof d.revives!=='number') d.revives=0;
     return d;
   }catch(e){ return null; }
 }
 let SAVE = loadSave() || {
   free:{stage:1,score:0,bestScore:0,bestStage:1},
   theme:{stage:1,score:0,bestScore:0,bestStage:1},
-  lastMode:'theme'
+  lastMode:'theme', coins:0, revives:0
 };
 let _saveTimer=null;
 function saveGame(immediate){
