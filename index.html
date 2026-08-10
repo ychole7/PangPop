@@ -443,23 +443,37 @@ function completionsFor(s){
   }
   return res;
 }
+let _recentSyl=[];
+function _notRecent(list){
+  const fresh=list.filter(s=>!_recentSyl.includes(s));
+  return fresh.length?fresh:list;
+}
 function smartSyllable(){
-  // 완성 가능한 글자를 훨씬 자주 제공 (체감 난이도 하향)
-  if(Math.random()<0.92){
-    const cands=shuffle(G.pool);
-    let fallback=null;
-    for(const s of cands){
+  // 완성 가능한 '모든' 후보를 모아 그 중 랜덤 (한 글자만 반복되는 것 방지)
+  let chosen=null;
+  if(Math.random()<0.78){
+    const targetC=[];   // 남은 목표 단어를 완성시키는 글자
+    const anyC=[];      // 아무 단어나 완성시키는 글자
+    for(const s of G.pool){
       const hit=completionsFor(s);
-      if(hit.length){
-        if(G.mode==='free') return s;
-        if(!fallback) fallback=s;  // 아무 완성이나 되는 첫 후보 저장 (폴백)
-        // 정확히 "지금 남은 목표 단어"를 완성시키는 글자면 최우선 채택
-        if(hit.some(h=>h.word in G.done && !G.done[h.word])) return s;
-      }
+      if(!hit.length) continue;
+      anyC.push(s);
+      if(G.mode==='theme' && hit.some(h=>h.word in G.done && !G.done[h.word])) targetC.push(s);
     }
-    if(fallback) return fallback;  // 목표 매칭 없어도 뭐라도 완성되면 그걸로
+    // 목표글자와 일반완성글자를 섞되, 목표에 가중치. 한 글자 독점 방지
+    let pool2;
+    if(G.mode==='theme' && targetC.length){
+      // 목표글자 2/3 확률, 나머지는 일반완성글자 — 다양성 확보
+      pool2 = (Math.random()<0.66) ? targetC : (anyC.length?anyC:targetC);
+    }else{
+      pool2 = anyC;
+    }
+    if(pool2.length) chosen=pick(_notRecent(pool2));
   }
-  return pick(G.pool);
+  if(!chosen) chosen=pick(_notRecent(G.pool));   // 완성 불가여도 최근 것 회피
+  // 최근 3개 기록 (연속 반복 방지)
+  _recentSyl.push(chosen); if(_recentSyl.length>3) _recentSyl.shift();
+  return chosen;
 }
 function ensureRow(r){
   while(G.grid.length<=r) G.grid.push(new Array(cellsIn(G.grid.length)).fill(null));
