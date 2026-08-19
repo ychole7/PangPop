@@ -100,11 +100,13 @@
   .chip{display:inline-block;border:1.5px solid #a86f2e;border-radius:999px;padding:4px 12px;margin:3px;
     background:rgba(40,26,14,.5);font-size:14px;color:#f5e3ae;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 
-  #mapVeil{position:absolute;inset:0;display:none;z-index:6;
-    background:linear-gradient(180deg,#3a5a3a,#2a3e28 40%,#241a10 100%)}
+  #mapVeil{position:absolute;inset:0;display:none;z-index:6;background:#1c2b1c}
   #mapVeil.on{display:block}
   #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:24px 0 40px;
-    display:flex;flex-direction:column-reverse;align-items:center}
+    display:flex;flex-direction:column-reverse;align-items:center;
+    background-image:url('assets/map_tree_bg.jpg');
+    background-repeat:repeat-y;background-size:100% auto;
+    background-position:top center;background-attachment:local}
   #mapClose{position:absolute;top:12px;right:12px;z-index:7;width:38px;height:38px;padding:0;border-radius:50%}
   .mnode{position:relative;width:76px;height:76px;margin:14px 0;display:flex;align-items:center;justify-content:center;
     border-radius:50%;font-family:'Pretendard',sans-serif;font-weight:800;font-size:24px;
