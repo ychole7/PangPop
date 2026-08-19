@@ -104,7 +104,6 @@
   #mapVeil.on{display:block}
   #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:#1c2b1c}
   #mapInner{position:relative;width:100%}
-  #mapClose{position:absolute;top:12px;right:12px;z-index:7;width:38px;height:38px;padding:0;border-radius:50%}
   #mapLives{position:absolute;top:16px;left:12px;z-index:7;background:rgba(20,12,6,.65);border:1.5px solid #a86f2e;
     border-radius:999px;padding:6px 14px;font-size:14px;color:#f5e3ae;font-weight:700;
     text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap}
@@ -168,7 +167,7 @@
   </div>
 </div>
 <div class="veil" id="veil"><div class="card" id="card"></div></div>
-<div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><button class="np" id="mapClose">✕</button></div>
+<div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div></div>
 </div>
 
 <script>
@@ -1612,18 +1611,12 @@ function openMap(){
       if(!spendLife()) return;
       SFX.click();
       document.getElementById('mapVeil').classList.remove('on');
+      clearInterval(_mapLivesTimer);
       G.mode='theme';
       startGame(false, lv);
     };
   });
 }
-document.getElementById('mapClose').onclick=()=>{
-  SFX.click();
-  document.getElementById('mapVeil').classList.remove('on');
-  clearInterval(_mapLivesTimer);
-  if(G.started){ G.locked=false; }
-  else{ intro(); }
-};
 function startGame(resume, atStage){
   if(typeof atStage==='number'){
     G.stage=atStage; G.score=0;
