@@ -108,6 +108,12 @@
     border-radius:999px;padding:6px 14px;font-size:14px;color:#f5e3ae;font-weight:700;
     text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap}
   #mapLives small{opacity:.75;font-size:11px;margin-left:4px}
+  #seasonTabs{position:absolute;top:16px;right:12px;z-index:7;display:flex;gap:4px}
+  .stab{width:30px;height:30px;border-radius:50%;border:1.5px solid #a86f2e;
+    background:rgba(20,12,6,.65);color:#f5e3ae;font-size:12px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+  .stab.active{border-color:#ffd76a;color:#fff6da;box-shadow:0 0 8px rgba(255,215,106,.6)}
+  .stab.locked{opacity:.35;pointer-events:none}
   .mnode{position:absolute;width:64px;height:64px;display:flex;align-items:center;justify-content:center;
     transform:translate(-50%,-50%);
     font-family:'Pretendard',sans-serif;font-weight:800;font-size:25px;
@@ -167,7 +173,7 @@
   </div>
 </div>
 <div class="veil" id="veil"><div class="card" id="card"></div></div>
-<div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div></div>
+<div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
 </div>
 
 <script>
@@ -1599,6 +1605,27 @@ function openMap(){
   renderMapLives();
   clearInterval(_mapLivesTimer);
   _mapLivesTimer=setInterval(renderMapLives,1000);
+  // 시즌 탭: 이미 진행한(=렌더된) 구간만 활성화, 클릭 시 해당 구간으로 스크롤
+  const tabsEl=document.getElementById('seasonTabs');
+  if(tabsEl){
+    let tabsHtml='';
+    for(let z=0; z<5; z++){
+      const reachable = z<=usedZoneMax;
+      tabsHtml += `<div class="stab ${reachable?'':'locked'}" data-z="${z}">S${z+1}</div>`;
+    }
+    tabsEl.innerHTML=tabsHtml;
+    tabsEl.querySelectorAll('.stab').forEach(t=>{
+      t.onclick=()=>{
+        const z=+t.dataset.z;
+        if(z>usedZoneMax) return;
+        SFX.click();
+        const zStart=z*100+1, zEnd=Math.min(TOTAL,(z+1)*100);
+        const midLv=(zStart+zEnd)/2;
+        const targetY=yPos(midLv);
+        scrollEl.scrollTo({top: Math.max(0, targetY - scrollEl.clientHeight/2), behavior:'smooth'});
+      };
+    });
+  }
   // 다음 도전 노드로 자동 스크롤
   requestAnimationFrame(()=>{
     const nextEl=scrollEl.querySelector('.mnode.next')||scrollEl.querySelector('.mnode.done:last-of-type');
