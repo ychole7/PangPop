@@ -102,10 +102,7 @@
 
   #mapVeil{position:absolute;inset:0;display:none;z-index:6;background:#1c2b1c}
   #mapVeil.on{display:block}
-  #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
-    background-image:url('assets/map_tree_bg.jpg');
-    background-repeat:repeat-y;background-size:100% auto;
-    background-position:top center;background-attachment:local}
+  #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:#1c2b1c}
   #mapInner{position:relative;width:100%}
   #mapClose{position:absolute;top:12px;right:12px;z-index:7;width:38px;height:38px;padding:0;border-radius:50%}
   #mapLives{position:absolute;top:16px;left:12px;z-index:7;background:rgba(20,12,6,.65);border:1.5px solid #a86f2e;
@@ -308,7 +305,7 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize',onResi
 
 /* ---------- 상태 ---------- */
 const G={
-  grid:[],parity:0,stage:1,score:0,combo:0,
+  grid:[],parity:0,stage:1,score:0,combo:0,started:false,
   mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},
   cur:null,queue:[],
   fly:null,aim:null,dragging:false,
@@ -1517,6 +1514,14 @@ function renderMapLives(){
   const mm=Math.floor(sec/60), ss=sec%60;
   el.innerHTML=`❤️ ${s.count}/${MAX_LIVES} <small>${mm}:${String(ss).padStart(2,'0')}</small>`;
 }
+const ZONES=[
+  {img:'assets/map_zone_forest.jpg'},     // 1~100
+  {img:'assets/map_zone_waterfall.jpg'},  // 101~200
+  {img:'assets/map_zone_snowpeak.jpg'},   // 201~300
+  {img:'assets/map_zone_cloud.jpg'},      // 301~400
+  {img:'assets/map_zone_night.jpg'}       // 401~500
+];
+function zoneIdx(lv){ return Math.min(4, Math.floor((lv-1)/100)); }
 function openMap(){
   const stars=SAVE.theme.levelStars||{};
   let maxUnlocked=1;
@@ -1536,6 +1541,17 @@ function openMap(){
     return 50 + wave + jitter;                         // 중심 50% 기준
   }
   function yPos(lv){ return H - BOTPAD - (lv-0.5)*SPACING; }  // lv=1이 맨 아래
+
+  // 구간별 배경(100단계씩): 스테이지 번호에 따라 자동 전환
+  let zonesHtml='';
+  const usedZoneMax=zoneIdx(TOTAL);
+  for(let z=0; z<=usedZoneMax; z++){
+    const zStart=z*100+1, zEnd=Math.min(TOTAL,(z+1)*100);
+    const yTop=yPos(zEnd)-SPACING/2, yBot=yPos(zStart)+SPACING/2;
+    const zh=yBot-yTop;
+    zonesHtml += `<div style="position:absolute;left:0;top:${yTop}px;width:100%;height:${zh}px;overflow:hidden;
+      background-image:url('${ZONES[z].img}');background-repeat:repeat-y;background-size:100% auto;background-position:top center"></div>`;
+  }
 
   let nodesHtml='';
   let pathPts=[];
@@ -1578,7 +1594,7 @@ function openMap(){
   if(allCleared){
     html += `<div style="position:absolute;left:50%;top:${TOPPAD-40}px;transform:translateX(-50%);color:#f5e3ae;text-align:center;font-size:14px;padding:6px 16px;white-space:nowrap">🏆 500 스테이지 완주! 대단해요</div>`;
   }
-  html += svg + nodesHtml + '</div>';
+  html += zonesHtml + svg + nodesHtml + '</div>';
   scrollEl.innerHTML=html;
   document.getElementById('mapVeil').classList.add('on');
   renderMapLives();
@@ -1601,7 +1617,13 @@ function openMap(){
     };
   });
 }
-document.getElementById('mapClose').onclick=()=>{ SFX.click(); document.getElementById('mapVeil').classList.remove('on'); clearInterval(_mapLivesTimer); };
+document.getElementById('mapClose').onclick=()=>{
+  SFX.click();
+  document.getElementById('mapVeil').classList.remove('on');
+  clearInterval(_mapLivesTimer);
+  if(G.started){ G.locked=false; }
+  else{ intro(); }
+};
 function startGame(resume, atStage){
   if(typeof atStage==='number'){
     G.stage=atStage; G.score=0;
@@ -1612,6 +1634,7 @@ function startGame(resume, atStage){
   }else{
     G.stage=1; G.score=0;
   }
+  G.started=true;
   buildStage(); G.locked=false; saveGame(true);
 }
 
