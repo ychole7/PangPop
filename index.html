@@ -1749,9 +1749,19 @@ document.getElementById('btnMute').onclick=()=>{
 };
 
 /* ---------- 시작 ---------- */
+function applyDebugZones(){
+  // 테스트 전용: 실제 저장(localStorage)엔 반영 안 함(saveGame 호출 안 함), 세션에서만 임시로 5구간 다 보이게
+  const targetMax=410;
+  const ls=SAVE.theme.levelStars||(SAVE.theme.levelStars={});
+  for(let i=1;i<=targetMax;i++){ if(ls[i]==null) ls[i]=3; }
+}
 function boot(){
   syncMuteBtn();
   resize();
+  try{
+    const params=new URLSearchParams(location.search);
+    if(params.get('testmap')==='1') applyDebugZones();
+  }catch(e){}
   // 모드 선택 전: 배경만 보이도록 빈 상태로 시작
   G.grid=[]; G.targets=[]; G.cur=null; G.queue=[];
   G.locked=true; intro();
