@@ -99,6 +99,24 @@
   .btn:active{transform:translateY(3px)}
   .chip{display:inline-block;border:1.5px solid #a86f2e;border-radius:999px;padding:4px 12px;margin:3px;
     background:rgba(40,26,14,.5);font-size:14px;color:#f5e3ae;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+  #mapVeil{position:absolute;inset:0;display:none;z-index:6;
+    background:linear-gradient(180deg,#3a5a3a,#2a3e28 40%,#241a10 100%)}
+  #mapVeil.on{display:block}
+  #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:24px 0 40px;
+    display:flex;flex-direction:column-reverse;align-items:center}
+  #mapClose{position:absolute;top:12px;right:12px;z-index:7;width:38px;height:38px;padding:0;border-radius:50%}
+  .mnode{position:relative;width:76px;height:76px;margin:14px 0;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;font-family:'Pretendard',sans-serif;font-weight:800;font-size:24px;
+    border:3px solid #8a5f22;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+  .mnode.done{background:radial-gradient(circle at 35% 30%,#e8c169,#a8792f);color:#3a2408;border-color:#fff0c0}
+  .mnode.next{background:radial-gradient(circle at 35% 30%,#8fc98a,#4f8a52);color:#0f2a10;border-color:#c8ffb0;
+    animation:nodepulse 1.3s ease-in-out infinite}
+  .mnode.locked{background:rgba(40,30,20,.7);color:rgba(255,255,255,.35);border-color:rgba(140,100,50,.4)}
+  @keyframes nodepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  .mnode .mstars{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:13px;
+    color:#ffe08c;text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap;letter-spacing:1px}
+  .mnode .mlock{position:absolute;font-size:22px;opacity:.6}
 </style>
 </head>
 <body>
@@ -136,6 +154,7 @@
     <button class="fab" id="btnRainbow">🌈 <b id="uiRainbow">2</b></button>
   </div>
   <div class="veil" id="veil"><div class="card" id="card"></div></div>
+  <div id="mapVeil"><div id="mapScroll"></div><button class="np" id="mapClose">✕</button></div>
 </div>
 </div>
 
@@ -1010,7 +1029,7 @@ function drawBoardRaw(){
 }
 const CANNON_W=4.8, CANNON_OFF=0.0;    // 대포를 위로, 발사버블에 밀착
 // 대포 이미지 안에서 파이프(발사구) 중심의 상대위치 (이미지 폭/높이 대비 0~1)
-const PIPE_X_RATIO=0.52, PIPE_Y_RATIO=0.05;
+const PIPE_X_RATIO=0.52, PIPE_Y_RATIO=-0.05;  // 발사대에 더 밀착
 function pipePos(){
   const cx0=W/2, sy=G.shooterY;
   const img=ASSETS.cannon;
@@ -1388,7 +1407,13 @@ function win(){
   G.locked=true;G.score+=1000;
   const stars=calcStars();
   SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4 + stars*15;
-  SAVE.totalStars=(SAVE.totalStars||0) + stars;
+  if(G.mode==='theme'){
+    if(!SAVE.theme.levelStars) SAVE.theme.levelStars={};
+    const prev=SAVE.theme.levelStars[G.stage]||0;
+    if(stars>prev){ SAVE.totalStars=(SAVE.totalStars||0) + (stars-prev); SAVE.theme.levelStars[G.stage]=stars; }
+  }else{
+    SAVE.totalStars=(SAVE.totalStars||0) + stars;
+  }
   saveGame(true);
   SFX.stageClear();
   addShake(8+stars*2); flash(0.3);
@@ -1400,12 +1425,16 @@ function win(){
   }else{
     extra=`<p>목표 단어 개수를 달성했어요 🎉</p>`;
   }
+  const mapBtn = G.mode==='theme' ? `<a href="#" id="toMap" style="display:block;margin-top:10px;color:#d9a94a;font-size:14px">🗺️ 지도로 보기</a>` : '';
   show(`<h2>스테이지 ${G.stage} 완료!</h2>
     ${starRow(stars)}
     ${extra}
     <p>점수 <b>${G.score.toLocaleString()}</b> · 💰+${30+G.stage*4+stars*15}</p>
-    <button class="btn" id="go">다음 스테이지</button>`);
+    <button class="btn" id="go">다음 스테이지</button>
+    ${mapBtn}`);
   document.getElementById('go').onclick=()=>{SFX.click();G.stage++;hide();G.locked=false;buildStage();saveGame(true);};
+  const toMapBtn=document.getElementById('toMap');
+  if(toMapBtn) toMapBtn.onclick=(ev)=>{ ev.preventDefault(); SFX.click(); hide(); G.locked=true; openMap(); };
 }
 function reviveBoard(){
   // 바닥에 가장 가까운(위험한) 줄부터 2줄 제거해 숨통 트기
@@ -1450,10 +1479,50 @@ function intro(){
     <p style="font-size:12px;opacity:.6;margin:4px 0 0">아무 단어나 자유롭게, 빠르게 점수 쌓기</p>
     ${(hasFree||hasTheme)?'<p style="font-size:12px;opacity:.55;margin-top:10px">버튼을 누르면 저장된 진행에서 이어집니다</p>':''}`);
   document.getElementById('mFree').onclick=()=>{ SFX.click(); G.mode='free'; hide(); startGame(hasFree); };
-  document.getElementById('mTheme').onclick=()=>{ SFX.click(); G.mode='theme'; hide(); startGame(hasTheme); };
+  document.getElementById('mTheme').onclick=()=>{ SFX.click(); G.mode='theme'; hide(); openMap(); };
 }
-function startGame(resume){
-  if(resume){
+function openMap(){
+  const stars=SAVE.theme.levelStars||{};
+  let maxUnlocked=1;
+  for(let i=1;i<=200;i++){ if(stars[i]!=null) maxUnlocked=i+1; }
+  const TOTAL=Math.max(maxUnlocked+6, 12);  // 다음 몇 단계까지 미리 보여줌
+  const scrollEl=document.getElementById('mapScroll');
+  let html='';
+  for(let lv=1; lv<=TOTAL; lv++){
+    const done = stars[lv]!=null;
+    const isNext = !done && lv===maxUnlocked;
+    const locked = !done && !isNext;
+    const cat=CATS[(lv-1)%CATS.length];
+    const cls = done?'done':(isNext?'next':'locked');
+    const starTxt = done ? '★'.repeat(stars[lv])+'<span style="opacity:.3">'+'★'.repeat(3-stars[lv])+'</span>' : '';
+    html += `<div class="mnode ${cls}" data-lv="${lv}" style="align-self:${lv%2===0?'flex-start':'flex-end'};margin-${lv%2===0?'left':'right'}:18%">
+      ${locked?'<span class="mlock">🔒</span>':(lv)}
+      ${done?`<span class="mstars">${starTxt}</span>`:''}
+    </div>`;
+  }
+  scrollEl.innerHTML=html;
+  document.getElementById('mapVeil').classList.add('on');
+  // 다음 도전 노드로 자동 스크롤(맨 아래=1번, 위로 갈수록 고레벨이므로 flex-direction:column-reverse 사용중)
+  requestAnimationFrame(()=>{
+    const nextEl=scrollEl.querySelector('.mnode.next')||scrollEl.querySelector('.mnode.done:last-of-type');
+    if(nextEl) nextEl.scrollIntoView({block:'center'});
+  });
+  scrollEl.querySelectorAll('.mnode').forEach(el=>{
+    el.onclick=()=>{
+      const lv=+el.dataset.lv;
+      if(el.classList.contains('locked')) return;
+      SFX.click();
+      document.getElementById('mapVeil').classList.remove('on');
+      G.mode='theme';
+      startGame(false, lv);
+    };
+  });
+}
+document.getElementById('mapClose').onclick=()=>{ SFX.click(); document.getElementById('mapVeil').classList.remove('on'); };
+function startGame(resume, atStage){
+  if(typeof atStage==='number'){
+    G.stage=atStage; G.score=0;
+  }else if(resume){
     const slot=SAVE[G.mode];
     G.stage=slot?Math.max(1,slot.stage):1;
     G.score=slot?(slot.score||0):0;
@@ -1475,12 +1544,13 @@ function loadSave(){
     if(typeof d.coins!=='number') d.coins=0;
     if(typeof d.revives!=='number') d.revives=0;
     if(typeof d.totalStars!=='number') d.totalStars=0;
+    if(!d.theme.levelStars) d.theme.levelStars={};  // {스테이지번호: 별개수}
     return d;
   }catch(e){ return null; }
 }
 let SAVE = loadSave() || {
   free:{stage:1,score:0,bestScore:0,bestStage:1},
-  theme:{stage:1,score:0,bestScore:0,bestStage:1},
+  theme:{stage:1,score:0,bestScore:0,bestStage:1,levelStars:{}},
   lastMode:'theme', coins:0, revives:0, totalStars:0
 };
 let _saveTimer=null;
