@@ -256,7 +256,7 @@ function resize(){
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
   // ── 시안 실측 비율(IMG_0430) ──
   // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
-  G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
+  G.shooterY=H*0.655;                         // 발사버블 중심 (위로 당김, 보드-대포 간격 축소)
   // 발사버블 중심이 보드 하단 선에 딱 걸치게
   BH=G.shooterY-BY;
   // maxRows: 보드 높이에 맞게
@@ -1008,7 +1008,7 @@ function drawBoardRaw(){
   ctx.fillStyle='rgba(20,12,6,.16)';ctx.fill();
   ctx.restore();
 }
-const CANNON_W=4.8, CANNON_OFF=0.15;   // 스팀펑크 대포(축소)
+const CANNON_W=4.8, CANNON_OFF=0.0;    // 대포를 위로, 발사버블에 밀착
 // 대포 이미지 안에서 파이프(발사구) 중심의 상대위치 (이미지 폭/높이 대비 0~1)
 const PIPE_X_RATIO=0.52, PIPE_Y_RATIO=0.05;
 function pipePos(){
