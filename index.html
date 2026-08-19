@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
-  :root{ --bg:#0b0e2a; --line:rgba(90,200,255,.10); --cyan:#5fd8ff; --ink:#bfe9ff; }
+  :root{ --bg:#2a1c12; --line:rgba(200,160,90,.10); --cyan:#d9a94a; --ink:#f0e2c4; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
   body{
@@ -23,46 +23,46 @@
     position:relative;display:flex;flex-direction:column;
     width:100%;height:100%;max-width:min(100vw,calc(100dvh*0.62));
     height:100dvh;overflow:hidden;
-    background:
-      repeating-linear-gradient(0deg,var(--line) 0 1px,transparent 1px 44px),
-      repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 44px),
-      radial-gradient(120% 80% at 50% 0%,#141a45 0%,var(--bg) 70%);
+    background:#2a1c12 url('assets/bg_hanok.jpg') center top/contain no-repeat;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-    box-shadow:0 0 60px rgba(95,216,255,.18);
+    box-shadow:0 0 60px rgba(120,90,40,.25);
   }
   @supports not (height:100dvh){ #app{height:100vh} }
   .glow{text-shadow:0 0 6px currentColor,0 0 16px currentColor}
 
-  header{flex:none;padding:6px 12px 2px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .hl{font-size:17px;line-height:1.35;color:#7fd4ff;text-shadow:0 0 8px rgba(95,216,255,.75)}
+  #scoreScroll{position:absolute;z-index:1;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;color:#5a3c1a;font-weight:800;text-shadow:0 1px 1px rgba(255,240,200,.5);
+    font-family:'Pretendard',sans-serif;letter-spacing:.3px}
+  header{flex:none;padding:6px 12px 2px;display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:2}
+  .hl{font-size:17px;line-height:1.35;color:#e8c169;text-shadow:0 1px 3px rgba(40,24,8,.7)}
   #goalBar{flex:none;padding:2px 14px 6px;display:flex;align-items:center;gap:10px}
-  #goalBar .glabel{font-size:13px;color:#9fe3ff;white-space:nowrap;text-shadow:0 0 6px rgba(95,216,255,.6)}
-  #goalBar .gtrack{flex:1;height:16px;border:2px solid #ff8fdc;border-radius:999px;overflow:hidden;
-    box-shadow:0 0 10px rgba(255,143,220,.5),inset 0 0 8px rgba(255,143,220,.22);background:rgba(255,143,220,.06)}
+  #goalBar .glabel{font-size:13px;color:#f5e3ae;white-space:nowrap;text-shadow:0 1px 3px rgba(40,24,8,.7)}
+  #goalBar .gtrack{flex:1;height:16px;border:2px solid #a86f2e;border-radius:999px;overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,.35),inset 0 0 8px rgba(168,111,46,.3);background:rgba(60,40,20,.35)}
   #goalBar .gtrack i{display:block;height:100%;border-radius:999px;
-    background:linear-gradient(90deg,#ffcf6b,#ff9a5c);box-shadow:0 0 10px #ffb15c;transition:width .3s}
-  #goalBar .gcombo{font-size:13px;color:#ff9fd6;white-space:nowrap;text-shadow:0 0 6px rgba(255,143,220,.6)}
-  .hl b{color:#fff;text-shadow:0 0 10px #5fd8ff,0 0 22px #5fd8ff}
-  .hl.pink{color:#ff8fdc;text-shadow:0 0 8px rgba(255,143,220,.8)}
-  .hl.pink b{color:#fff;text-shadow:0 0 10px #ff8fdc,0 0 22px #ff8fdc}
+    background:linear-gradient(90deg,#e8c169,#c8962f);box-shadow:0 0 8px rgba(232,193,105,.6);transition:width .3s}
+  #goalBar .gcombo{font-size:13px;color:#d9a94a;white-space:nowrap;text-shadow:0 1px 3px rgba(40,24,8,.7)}
+  .hl b{color:#fff6e0;text-shadow:0 1px 3px rgba(40,24,8,.8)}
+  .hl.pink{color:#d9a94a;text-shadow:0 1px 3px rgba(40,24,8,.7)}
+  .hl.pink b{color:#fff6e0;text-shadow:0 1px 3px rgba(40,24,8,.8)}
   .right{text-align:right}
-  .np{background:transparent;border:2px solid #c77bff;border-radius:999px;
-    padding:7px 15px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;color:#f0d8ff;
-    box-shadow:0 0 10px rgba(199,123,255,.7),inset 0 0 10px rgba(199,123,255,.35);
-    text-shadow:0 0 8px #c77bff;margin-bottom:6px}
+  .np{background:rgba(40,26,14,.55);border:2px solid #a86f2e;border-radius:999px;
+    padding:7px 15px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;color:#f5e3ae;
+    box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 8px rgba(168,111,46,.25);
+    text-shadow:0 1px 2px rgba(0,0,0,.6);margin-bottom:6px}
   .np:active{transform:translateY(2px)}
-  .bar{width:130px;height:20px;border:2px solid #ff8fdc;border-radius:999px;margin-top:5px;
-    box-shadow:0 0 10px rgba(255,143,220,.6),inset 0 0 8px rgba(255,143,220,.25);overflow:hidden}
+  .bar{width:130px;height:20px;border:2px solid #a86f2e;border-radius:999px;margin-top:5px;
+    box-shadow:0 1px 4px rgba(0,0,0,.35),inset 0 0 8px rgba(168,111,46,.3);overflow:hidden;background:rgba(60,40,20,.35)}
   .bar i{display:block;height:100%;width:20%;border-radius:999px;
-    background:linear-gradient(90deg,#ffcf6b,#ff9a5c);box-shadow:0 0 12px #ffb15c;transition:width .25s}
+    background:linear-gradient(90deg,#e8c169,#c8962f);box-shadow:0 0 8px rgba(232,193,105,.6);transition:width .25s}
 
   #targetBar{flex:none;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
     padding:2px 10px 6px;min-height:0}
-  #targetBar .tchip{border:1.6px solid var(--cyan);border-radius:999px;
-    padding:4px 12px;font-size:14px;color:#dff4ff;text-shadow:0 0 6px var(--cyan);
-    box-shadow:0 0 8px rgba(95,216,255,.35);white-space:nowrap;transition:.25s}
-  #targetBar .tchip.done{border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2;
-    box-shadow:0 0 12px rgba(124,255,178,.5);background:rgba(124,255,178,.12)}
+  #targetBar .tchip{border:1.6px solid #a86f2e;border-radius:999px;background:rgba(40,26,14,.5);
+    padding:4px 12px;font-size:14px;color:#f5e3ae;text-shadow:0 1px 2px rgba(0,0,0,.6);
+    box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap;transition:.25s}
+  #targetBar .tchip.done{border-color:#7ba05b;color:#eafff0;text-shadow:0 1px 2px rgba(0,0,0,.6);
+    box-shadow:0 0 8px rgba(123,160,91,.4);background:rgba(123,160,91,.22)}
   #stage{flex:1;min-height:0;position:relative}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
@@ -72,39 +72,40 @@
   #tray{position:absolute;left:76px;bottom:64px;display:flex;flex-direction:column;gap:8px;z-index:2;
     opacity:0;pointer-events:none;transform:translateY(8px);transition:.18s}
   #tray.open{opacity:1;pointer-events:auto;transform:translateY(0)}
-  .fab{background:transparent;border:2px solid var(--cyan);
-    border-radius:999px;color:#eaf9ff;font-family:'Pretendard',sans-serif;font-weight:700;
-    box-shadow:0 0 12px rgba(95,216,255,.65),inset 0 0 12px rgba(95,216,255,.25);
-    text-shadow:0 0 8px var(--cyan);display:flex;align-items:center;justify-content:center;gap:5px;
+  .fab{background:rgba(40,26,14,.6);border:2px solid #a86f2e;
+    border-radius:999px;color:#f5e3ae;font-family:'Pretendard',sans-serif;font-weight:700;
+    box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 10px rgba(168,111,46,.25);
+    text-shadow:0 1px 2px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;gap:5px;
     padding:9px 14px;font-size:15px;white-space:nowrap}
   .fab:active{transform:translateY(2px)}
   .fab[disabled]{opacity:.35;box-shadow:none}
-  .fab.active{border-color:#ffe08c;color:#fff8e0;text-shadow:0 0 10px #ffe08c;
-    box-shadow:0 0 18px rgba(255,224,140,.85),inset 0 0 14px rgba(255,224,140,.3);
+  .fab.active{border-color:#ffd76a;color:#fff6da;text-shadow:0 1px 2px rgba(0,0,0,.6);
+    box-shadow:0 0 14px rgba(255,215,106,.7),inset 0 0 12px rgba(255,215,106,.25);
     animation:itempulse 1s ease-in-out infinite}
   @keyframes itempulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
   .veil{position:absolute;inset:0;display:none;place-items:center;
-    background:rgba(6,9,30,.78);backdrop-filter:blur(3px);z-index:5}
+    background:rgba(20,12,6,.72);backdrop-filter:blur(3px);z-index:5}
   .veil.on{display:grid}
-  .card{background:rgba(12,17,48,.92);border:2px solid var(--cyan);border-radius:24px;
+  .card{background:linear-gradient(180deg,#3a2717,#2a1c12);border:2px solid #c8962f;border-radius:20px;
     padding:24px 26px;text-align:center;max-width:84%;
-    box-shadow:0 0 24px rgba(95,216,255,.55),inset 0 0 26px rgba(95,216,255,.14)}
-  .card h2{margin:0 0 8px;font-size:27px;color:#fff;text-shadow:0 0 12px #5fd8ff,0 0 26px #5fd8ff}
-  .card p{margin:5px 0;font-size:15px;color:#a9d8f5;line-height:1.55}
-  .card p b{color:#fff;text-shadow:0 0 10px #5fd8ff}
-  .btn{margin-top:16px;background:transparent;border:2px solid #7cffb2;border-radius:999px;
-    padding:12px 30px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:19px;color:#eafff3;
-    text-shadow:0 0 10px #7cffb2;box-shadow:0 0 16px rgba(124,255,178,.6),inset 0 0 14px rgba(124,255,178,.25)}
+    box-shadow:0 8px 30px rgba(0,0,0,.5),inset 0 0 20px rgba(200,150,47,.12)}
+  .card h2{margin:0 0 8px;font-size:27px;color:#f5e3ae;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+  .card p{margin:5px 0;font-size:15px;color:#dcc9a0;line-height:1.55}
+  .card p b{color:#fff6da;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .btn{margin-top:16px;background:linear-gradient(180deg,#e8c169,#c8962f);border:2px solid #8a5f22;border-radius:999px;
+    padding:12px 30px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:19px;color:#2a1c0a;
+    text-shadow:0 1px 1px rgba(255,255,255,.3);box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 2px rgba(255,255,255,.4)}
   .btn:active{transform:translateY(3px)}
-  .chip{display:inline-block;border:1.5px solid #ff8fdc;border-radius:999px;padding:4px 12px;margin:3px;
-    font-size:14px;color:#ffd9f2;text-shadow:0 0 8px #ff8fdc;box-shadow:0 0 10px rgba(255,143,220,.35)}
+  .chip{display:inline-block;border:1.5px solid #a86f2e;border-radius:999px;padding:4px 12px;margin:3px;
+    background:rgba(40,26,14,.5);font-size:14px;color:#f5e3ae;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
 
 
 <div id="app">
+<div id="scoreScroll"><b id="uiScoreBig">0</b></div>
 <header>
   <div style="display:flex;align-items:center;gap:6px">
     <button class="np" id="btnMenu" style="padding:7px 12px">❚❚</button>
@@ -113,7 +114,6 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;font-size:13px">
     <span class="hl" style="font-size:13px">S<b id="uiStage">1</b></span>
-    <span class="hl" style="font-size:13px">🏆<b id="uiScore">0</b></span>
     <span class="hl" style="font-size:13px">💰<b id="uiCoins">0</b></span>
   </div>
 </header>
@@ -189,14 +189,12 @@ const MAXW = 5;
 
 /* ---------- 찰흙 색 ---------- */
 const PALETTE = [
-  ['#7cffb2','#3fe08b'],
-  ['#ff8fdc','#ff5cc0'],
-  ['#6fd6ff','#38b8f0'],
-  ['#ffd86f','#f2b93c'],
-  ['#ff9a5c','#f0762e'],
-  ['#c08cff','#9a5cff'],
-  ['#5cffe1','#25dcc0'],
-  ['#ff7a7a','#f04d4d']
+  ['#8fc98a','#4f8a52'],   // 옥(비취) 초록
+  ['#e8a6c2','#c96f95'],   // 분홍 마노
+  ['#8fb8d8','#4f7fa8'],   // 하늘색 마노
+  ['#e8c27a','#b8863f'],   // 호박(황옥)
+  ['#e0dcd0','#b0a890'],   // 크림 대리석
+  ['#b39ad6','#7c5ba8']    // 자수정 보라
 ];
 let COLORMAP={};
 const NCOL=6;  // 색깔 매칭에 쓰는 색 수
@@ -219,21 +217,43 @@ const COLS=7;
 let BX=0,BY=0,BW=0,BH=0;      // 보드 안쪽 영역
 const FRAME=9;
 
+// 배경 이미지(bg_hanok.jpg, 900x1572)의 실측 프레임 좌표(이미지 비율 0~1)
+const BG_IMG_W=900, BG_IMG_H=1572;
+const BG_FRAME={left:0.028, right:0.972, top:0.148};  // 실측값에 여유 약간
 function resize(){
-  const box=document.getElementById('stage').getBoundingClientRect();
+  const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
+  const box=stageEl.getBoundingClientRect();
+  const appBox=appEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
   W=Math.max(1,box.width); H=Math.max(1,box.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  const pad=10;
-  BX=pad+FRAME; BW=W-(pad+FRAME)*2;
+  // 배경(#app, background-size:cover, center top)과 #stage 사이의 오프셋 계산
+  const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
+  const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
+  const imgOffX=(appBox.width-imgW)/2;
+  const stageOffX=box.left-appBox.left, stageOffY=box.top-appBox.top;
+  const bgX=fx=>imgOffX+fx*imgW-stageOffX;
+  const bgY=fy=>fy*imgH-stageOffY;
+
+  // 두루마리(점수판) 위치: #app 기준 절대좌표로 배치
+  const scrollEl=document.getElementById('scoreScroll');
+  if(scrollEl){
+    const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW;
+    const sT=0.0350*imgH, sB=0.1240*imgH;
+    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
+    scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
+    scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
+  }
+  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right);
+  BW=bxRight-BX;
   R=BW/(COLS*2);
   // 버블 최대 지름 상한(태블릿/데스크톱에서 과대 방지): 화면 높이 기준
   const Rmax=Math.min(H*0.052, 46);
-  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=(W-BW)/2; }
+  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
   ROWH=R*1.72;
-  BY=6+FRAME;
+  BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
   // ── 시안 실측 비율(IMG_0430) ──
   // 보드 하단 = 화면 88%, 발사버블 중심 = 화면 69%, 대포 하단 = 화면 86%
   G.shooterY=H*0.69;                          // 발사버블 중심 (화면 69%)
@@ -491,7 +511,8 @@ function shoot(angle){
   if(item==='bomb') G.bombs--;
   if(item==='rainbow') G.rainbows--;
   G.activeItem=null;
-  G.fly={x:W/2,y:G.shooterY,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp,s:G.cur.s,col:G.cur.col,item};
+  const p0=pipePos();
+  G.fly={x:p0.x,y:p0.y,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp,s:G.cur.s,col:G.cur.col,item};
   G.cur=G.queue.shift(); G.queue.push(newCur());
   G.hintCells=null; G.trajA=null; G.shots++; syncUI();
 }
@@ -643,7 +664,18 @@ function resolve(c,r){
     if(combo>=2) addPop(px,py-R*0.9,'콤보 x'+combo,'#ff9fd6');
     G.locked=true;
     clearCells(word.cells);
-    for(const [cc,rr] of word.cells) addWave(cx(cc,rr),cy(rr),'#ffe08c',R*3);
+    // 글자를 순서대로 시간차 반짝임 (이어지는 느낌 강화)
+    word.cells.forEach(([cc,rr],i)=>{
+      setTimeout(()=>{ addWave(cx(cc,rr),cy(rr),'#ffe08c',R*3); if(i>0)SFX.pop(); },i*70);
+    });
+    // 4글자 이상 특별 연출: 화면 전체에 별빛 파티클
+    if(word.word.length>=4){
+      for(let i=0;i<20;i++){
+        const ang=Math.random()*Math.PI*2, sp=1+Math.random()*4;
+        G.particles.push({x:W/2,y:H*0.4,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:1.4,col:'#ffe08c',r:2+Math.random()*3});
+      }
+      G.banner={text:word.word,life:1.6,bonus:true,big:true};
+    }
     setTimeout(()=>{
       let goldHit=0; const bombCells=[];
       // 단어 셀 제거
@@ -826,7 +858,10 @@ const SFX={
 function blip(){ SFX.pop(); }
 
 /* ---------- 에셋 ---------- */
-const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.png' };
+const GEM_NAMES=['jade','ruby','turquoise','amber','amethyst','onyx'];
+const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.png',
+  gem0:'assets/gem_jade.png', gem1:'assets/gem_ruby.png', gem2:'assets/gem_turquoise.png',
+  gem3:'assets/gem_amber.png', gem4:'assets/gem_amethyst.png', gem5:'assets/gem_onyx.png' };
 const ASSETS={};
 function loadAssets(){
   return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{
@@ -852,38 +887,60 @@ function neon(col,blur,w,fn){
 }
 function drawBubbleRaw(x,y,r,s,col,glow,special){
   let [c1,c2]=colByIdx(col||0);
-  if(special==='gold'){ c1='#ffe89a'; c2='#f2b93c'; }
-  else if(special==='bomb'){ c1='#ffb47a'; c2='#f0762e'; }
-  ctx.save();
-  // 안쪽 어둡게 + 은은한 색 채움
-  ctx.beginPath();ctx.arc(x,y,r*.94,0,7);
-  const g=ctx.createRadialGradient(x,y,r*.1,x,y,r);
-  g.addColorStop(0,'rgba(6,9,30,.94)');g.addColorStop(.6,'rgba(9,13,38,.90)');g.addColorStop(1,c2+'55');
-  ctx.fillStyle=g;ctx.fill();
-  ctx.restore();
-  const lw=Math.max(1.5,r*.075);
-  const ring=()=>{ctx.beginPath();ctx.arc(x,y,r*.94,0,7);ctx.stroke();};
-  // 링: 바깥쪽 글로우 한 번 → 선명한 선 한 번
-  neon(c1,glow?r*1.2:r*.5,lw,ring);
-  ctx.save();
-  ctx.strokeStyle=glow?'#fff4cf':c1; ctx.lineWidth=lw*.9; ring();
-  ctx.restore();
+  if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; }
+  else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
+  const rr=r*.94;
+  const gemImg = (special==='gold') ? ASSETS.gem3 : (special==='bomb' ? ASSETS.gem1 : ASSETS['gem'+((col||0)%6)]);
 
-  // 글자: 글로우 한 겹만 뒤에 깔고, 마지막은 블러 0으로 또렷하게
+  if(gemImg){
+    // ── 실제 보석 텍스처 이미지를 원형으로 클립해서 그림 ──
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip();
+    ctx.drawImage(gemImg, x-rr, y-rr, rr*2, rr*2);
+    if(special==='gold'){ ctx.fillStyle='rgba(255,224,140,.28)'; ctx.fillRect(x-rr,y-rr,rr*2,rr*2); }
+    ctx.restore();
+  }else{
+    // ── 폴백: 절차적 그라디언트 (이미지 로드 전) ──
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip();
+    const g=ctx.createRadialGradient(x-rr*.32,y-rr*.38,rr*.12, x,y,rr*1.15);
+    g.addColorStop(0, lighten(c1,18));
+    g.addColorStop(.45, c1);
+    g.addColorStop(1, c2);
+    ctx.fillStyle=g;
+    ctx.fillRect(x-rr,y-rr,rr*2,rr*2);
+    ctx.restore();
+  }
+
+  // ── 금테 얇은 링 ──
   ctx.save();
-  ctx.font=`800 ${r*1.04}px 'Pretendard', sans-serif`;
+  ctx.beginPath(); ctx.arc(x,y,rr,0,7);
+  ctx.strokeStyle= glow ? '#fff0c0' : '#c9a04a';
+  ctx.lineWidth=Math.max(1.2,r*.055);
+  ctx.globalAlpha=.85;
+  ctx.stroke();
+  ctx.restore();
+  if(glow){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x,y,rr,0,7);
+    ctx.strokeStyle='#ffe9a0'; ctx.shadowColor='#ffd86f'; ctx.shadowBlur=r*.5;
+    ctx.lineWidth=Math.max(1.2,r*.04); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 글자: 흰색 + 아래쪽 은은한 그림자(양각 느낌) ──
+  ctx.save();
+  ctx.font=`800 ${r*1.0}px 'Pretendard', sans-serif`;
   ctx.textAlign='center';ctx.textBaseline='middle';
-  const ty=y+r*.06, hal=glow?'#ffe9a0':c1;
-  // 글로우 한 겹(뒤) + 선명한 흰 글자(앞) — 겹쳐찍기 없이 균일
-  ctx.shadowColor=hal; ctx.shadowBlur=r*.5;
-  ctx.fillStyle=hal; ctx.fillText(s,x,ty);
-  ctx.shadowBlur=0;
-  ctx.fillStyle='#ffffff'; ctx.fillText(s,x,ty);
+  const ty=y+r*.06;
+  ctx.shadowColor='rgba(40,24,10,.55)'; ctx.shadowBlur=r*.14; ctx.shadowOffsetY=r*.07;
+  ctx.fillStyle='#fffaf0'; ctx.fillText(s,x,ty);
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
   // 특수 버블 장식
   if(special==='gold'){
-    ctx.strokeStyle='#fff3b0'; ctx.lineWidth=r*.10; ctx.shadowColor='#ffe08c'; ctx.shadowBlur=r*.7;
-    ctx.beginPath(); ctx.arc(x,y,r*.94,0,7); ctx.stroke();
-    // 반짝이 4방
+    ctx.strokeStyle='#fff3b0'; ctx.lineWidth=r*.09; ctx.shadowColor='#ffe08c'; ctx.shadowBlur=r*.6;
+    ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.stroke();
+    ctx.shadowBlur=0;
     ctx.fillStyle='#fff8d8';
     [[0.5,-0.7],[-0.6,0.4],[0.7,0.5],[-0.4,-0.5]].forEach(([dx,dy],i)=>{
       const s2=r*0.10*(0.7+0.5*Math.sin(performance.now()/200+i));
@@ -891,9 +948,15 @@ function drawBubbleRaw(x,y,r,s,col,glow,special){
     });
   }else if(special==='bomb'){
     ctx.font=`${r*.55}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.shadowBlur=0; ctx.fillText('💣', x+r*.5, y-r*.5);
+    ctx.fillText('💣', x+r*.5, y-r*.5);
   }
   ctx.restore();
+}
+function lighten(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  r=Math.min(255,r+amt*2); g=Math.min(255,g+amt*2); b=Math.min(255,b+amt*2);
+  return `rgb(${r|0},${g|0},${b|0})`;
 }
 const SPR=new Map();
 let FONTS_READY=false;
@@ -937,30 +1000,41 @@ function drawBoard(){
   ctx.drawImage(BOARDLAYER,0,0,W,H);
 }
 function drawBoardRaw(){
+  // 배경 이미지에 이미 나무+금테 프레임이 그려져 있어 별도 테두리는 생략.
+  // 버블 가독성을 위한 은은한 반투명 음영만 살짝 깔아줌.
   const x=BX-FRAME,y=BY-FRAME,w=BW+FRAME*2,h=BH+FRAME*2;
   ctx.save();
-  roundRect(x,y,w,h,30);
-  ctx.fillStyle='rgba(10,14,44,.45)';ctx.fill();
+  roundRect(x,y,w,h,24);
+  ctx.fillStyle='rgba(20,12,6,.16)';ctx.fill();
   ctx.restore();
-  neon('#5fd8ff',16,3,()=>{roundRect(x,y,w,h,30);ctx.stroke();});
-  drawScenery();
 }
-const CANNON_W=6.4, CANNON_OFF=0.35;   // PNG 대포: 발사버블 하단에 밀착
+const CANNON_W=6.2, CANNON_OFF=0.15;   // 스팀펑크 대포(가로형, 회전없음)
+// 대포 이미지 안에서 파이프(발사구) 중심의 상대위치 (이미지 폭/높이 대비 0~1)
+const PIPE_X_RATIO=0.52, PIPE_Y_RATIO=0.05;
+function pipePos(){
+  const cx0=W/2, sy=G.shooterY;
+  const img=ASSETS.cannon;
+  if(!img) return {x:cx0,y:sy};
+  const w=R*CANNON_W, h=w*(img.height/img.width);
+  const ix=cx0-w/2, iy=sy+R*CANNON_OFF;
+  return {x: ix+w*PIPE_X_RATIO, y: iy+h*PIPE_Y_RATIO};
+}
 function drawShooter(now){
-  const img=ASSETS.cannon, sy=G.shooterY, x=W/2;
+  const img=ASSETS.cannon, sy=G.shooterY, cx0=W/2;
+  const p=pipePos(); const pipeX=p.x, pipeY=p.y;
   if(img){
     const w=R*CANNON_W, h=w*(img.height/img.width);
-    ctx.drawImage(img, x-w/2, sy+R*CANNON_OFF, w, h);
+    ctx.drawImage(img, cx0-w/2, sy+R*CANNON_OFF, w, h);
   }
   if(!G.fly&&G.cur){
     const bob=Math.sin(now/420)*R*.05;
-    bubble(x,sy+bob,R*.94,G.cur.s,G.cur.col);
+    bubble(pipeX,pipeY+bob,R*.94,G.cur.s,G.cur.col);
     if(G.activeItem){
       const icon=G.activeItem==='bomb'?'💣':'🌈';
       ctx.save();
       ctx.font=`${R*.62}px sans-serif`;
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(icon, x+R*0.78, sy+bob-R*0.78);
+      ctx.fillText(icon, pipeX+R*0.78, pipeY+bob-R*0.78);
       ctx.restore();
     }
   }
@@ -984,10 +1058,10 @@ function drawQueue(){
   const x=W-R*1.8,y=G.shooterY-R*0.1,r=R*.82;
   ctx.save();
   ctx.font=`700 ${R*.52}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='#9fe8ff';ctx.shadowColor='#5fd8ff';ctx.shadowBlur=10;
+  ctx.fillStyle='#f5e3ae';ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=4;
   ctx.fillText('다음: '+G.queue[0].s,x,y-r*1.5);
   ctx.restore();
-  neon('#5fd8ff',10,2,()=>{ctx.beginPath();ctx.arc(x,y,r*1.12,0,7);ctx.stroke();});
+  neon('#c8962f',6,2,()=>{ctx.beginPath();ctx.arc(x,y,r*1.12,0,7);ctx.stroke();});
   bubble(x,y,r*.92,G.queue[0].s,G.queue[0].col);
 }
 function trajectory(angle){
@@ -1014,7 +1088,7 @@ function draw(now){
   if(G.aim!=null&&!G.fly&&!G.locked){
     if(G.trajA!==G.aim){G.trajA=G.aim;G.trajPts=trajectory(G.aim);}
     const pts=G.trajPts;
-    ctx.save();ctx.fillStyle='#8fe6ff';ctx.shadowColor='#5fd8ff';ctx.shadowBlur=10;
+    ctx.save();ctx.fillStyle='#f0d896';ctx.shadowColor='#c8962f';ctx.shadowBlur=8;
     pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p[0],p[1],R*.13*(1-i/pts.length*.5),0,7);ctx.fill();});
     if(pts.length>2){
       const a=pts[pts.length-1],b2=pts[pts.length-2];
@@ -1061,17 +1135,20 @@ function draw(now){
   drawQueue();
 
   if(G.banner){
-    const b=G.banner, t=1-b.life;
+    const b=G.banner, t=1-b.life/(b.big?1.6:1);
     const pop=t<.18?(t/.18):1;
-    const fs=Math.min(R*2.0,BW/(b.text.length+0.45))*(0.72+0.28*pop)*(1+(1-b.life)*0.06);
+    const bigMul=b.big?1.5:1;
+    const fs=Math.min(R*2.0*bigMul,BW/(b.text.length+0.45)*bigMul)*(0.72+0.28*pop)*(1+(1-b.life)*0.06);
     const col=b.bonus?'#ffd86f':'#ff8fdc';
     ctx.save();
     ctx.globalAlpha=Math.min(1,b.life*2.2);
     ctx.translate(W/2,BY+R*1.25-(1-b.life)*R*.8);
+    if(b.big){ const rot=Math.sin(performance.now()/90)*0.04; ctx.rotate(rot); }
     ctx.font=`800 ${fs}px 'Pretendard', sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.shadowColor=col;ctx.shadowBlur=fs*.55;
+    ctx.shadowColor=col;ctx.shadowBlur=fs*(b.big?0.8:0.55);
     ctx.fillStyle=col;ctx.fillText(b.text,0,0);ctx.fillText(b.text,0,0);
+    if(b.big) ctx.fillText(b.text,0,0);
     ctx.shadowBlur=0;
     ctx.fillStyle='#ffffff';ctx.fillText(b.text,0,0);
     ctx.restore();
@@ -1200,7 +1277,7 @@ document.getElementById('btnMenu').onclick=()=>{
     ${info}
     <button class="btn" id="go">이어서 하기</button>
     <p style="margin-top:12px;font-size:14px">
-      <a href="#" id="switch" style="color:#7fd4ff">${G.mode==='free'?'주제 모드로 전환':'챌린지 모드로 전환'}</a>
+      <a href="#" id="switch" style="color:#d9a94a">${G.mode==='free'?'주제 모드로 전환':'챌린지 모드로 전환'}</a>
       &nbsp;·&nbsp;
       <a href="#" id="restart" style="color:#ff9a5c">처음부터</a>
     </p>
@@ -1223,7 +1300,7 @@ document.getElementById('btnShop').onclick=()=>{
 function syncUI(){
   document.getElementById('uiStage').textContent=G.stage;
   const uc=document.getElementById('uiCoins'); if(uc) uc.textContent=(SAVE.coins||0).toLocaleString();
-  document.getElementById('uiScore').textContent=G.score.toLocaleString();
+  const usb=document.getElementById('uiScoreBig'); if(usb) usb.textContent=G.score.toLocaleString();
   document.getElementById('uiGoal').textContent=(G.mode==='free'?'챌린지':G.goal);
   document.getElementById('uiCombo').textContent='x'+Math.max(1,Math.min(G.combo,5));
   document.getElementById('uiSwap').textContent=G.swaps;
@@ -1292,23 +1369,41 @@ function wireShop(){
   });
   document.getElementById('shopClose').onclick=()=>{ SFX.click(); hide(); G.locked=false; };
 }
+function calcStars(){
+  // 발사 대비 성공 효율로 별점 산정 (적은 헛발질로 깰수록 별 많이)
+  const goal = G.mode==='theme' ? G.targets.length : G.freeGoal;
+  const idealShots = Math.max(goal, Math.ceil(goal*1.3));  // 이상적 발사수
+  const shots = Math.max(1, G.shots);
+  const ratio = idealShots/shots;
+  if(ratio>=0.85) return 3;
+  if(ratio>=0.55) return 2;
+  return 1;
+}
+function starRow(n){
+  let out='';
+  for(let i=0;i<3;i++) out+= i<n ? '<span style="color:#ffe08c;text-shadow:0 0 12px #ffb15c">★</span>' : '<span style="color:rgba(255,255,255,.25)">★</span>';
+  return `<div style="font-size:34px;letter-spacing:6px;margin:8px 0">${out}</div>`;
+}
 function win(){
   G.locked=true;G.score+=1000;
-  SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4;
+  const stars=calcStars();
+  SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4 + stars*15;
+  SAVE.totalStars=(SAVE.totalStars||0) + stars;
   saveGame(true);
   SFX.stageClear();
-  addShake(8); flash(0.3);
+  addShake(8+stars*2); flash(0.3);
   let extra='';
   if(G.mode==='theme'){
     const nextGoal=CATS[(G.stage)%CATS.length];
     extra=`<p>목표 단어를 모두 만들었어요 🎉</p>
       <p style="margin-top:8px;font-size:14px;opacity:.85">다음 주제: <b>${nextGoal}</b></p>`;
   }else{
-    extra=`<p>버블을 모두 터뜨렸어요 🎉</p>`;
+    extra=`<p>목표 단어 개수를 달성했어요 🎉</p>`;
   }
   show(`<h2>스테이지 ${G.stage} 완료!</h2>
+    ${starRow(stars)}
     ${extra}
-    <p>점수 <b>${G.score.toLocaleString()}</b></p>
+    <p>점수 <b>${G.score.toLocaleString()}</b> · 💰+${30+G.stage*4+stars*15}</p>
     <button class="btn" id="go">다음 스테이지</button>`);
   document.getElementById('go').onclick=()=>{SFX.click();G.stage++;hide();G.locked=false;buildStage();saveGame(true);};
 }
@@ -1342,7 +1437,8 @@ function intro(){
   const hasFree = SAVE.free && (SAVE.free.stage>1 || SAVE.free.score>0);
   const hasTheme = SAVE.theme && (SAVE.theme.stage>1 || SAVE.theme.score>0);
   const bestLine = (SAVE.free.bestScore||SAVE.theme.bestScore)
-    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 · 주제 ${(SAVE.theme.bestScore||0).toLocaleString()} / 챌린지 ${(SAVE.free.bestScore||0).toLocaleString()}</p>`
+    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 · 주제 ${(SAVE.theme.bestScore||0).toLocaleString()} / 챌린지 ${(SAVE.free.bestScore||0).toLocaleString()}</p>
+       <p style="font-size:13px;opacity:.8;margin-top:2px">⭐ 모은 별 <b style="color:#ffe08c">${SAVE.totalStars||0}</b>개</p>`
     : '';
   show(`<h2>낱글자 팡팡!</h2>
     <p>버블을 쏘아 <b>가로·대각선</b>으로<br>낱글자를 이어 단어를 만들면 팡!</p>
@@ -1378,13 +1474,14 @@ function loadSave(){
     if(!d.theme) d.theme={stage:1,score:0,bestScore:0,bestStage:1};
     if(typeof d.coins!=='number') d.coins=0;
     if(typeof d.revives!=='number') d.revives=0;
+    if(typeof d.totalStars!=='number') d.totalStars=0;
     return d;
   }catch(e){ return null; }
 }
 let SAVE = loadSave() || {
   free:{stage:1,score:0,bestScore:0,bestStage:1},
   theme:{stage:1,score:0,bestScore:0,bestStage:1},
-  lastMode:'theme', coins:0, revives:0
+  lastMode:'theme', coins:0, revives:0, totalStars:0
 };
 let _saveTimer=null;
 function saveGame(immediate){
