@@ -117,6 +117,10 @@
   .mnode .mstars{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:13px;
     color:#ffe08c;text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap;letter-spacing:1px}
   .mnode .mlock{position:absolute;font-size:22px;opacity:.6}
+  .mnode.mmilestone{width:88px;height:88px;font-size:30px}
+  .mnode.mfinal{width:100px;height:100px;font-size:36px;
+    background:radial-gradient(circle at 35% 30%,#fff3c4,#e8c169);border-color:#fff8e0;
+    box-shadow:0 0 20px rgba(255,224,140,.7),0 4px 10px rgba(0,0,0,.4)}
 </style>
 </head>
 <body>
@@ -200,6 +204,8 @@ const GENERIC_WORDS = [
   '거북선','한복','태극기','한글날','설날','추석','생일파티','졸업식','입학식'
 ];
 const CATS = Object.keys(DICT_BY_CAT);
+const MAX_STAGE = 500;      // 주제모드 최종 스테이지
+const MILESTONE_EVERY = 30; // 마일스톤 간격
 const DICT = new Map();
 for (const c of CATS) for (const w of DICT_BY_CAT[c]) if (w.length>=2) DICT.set(w,c);
 for (const w of BONUS_WORDS) DICT.set(w,'보너스');
@@ -1406,7 +1412,11 @@ function starRow(n){
 function win(){
   G.locked=true;G.score+=1000;
   const stars=calcStars();
-  SAVE.coins=(SAVE.coins||0) + 30 + G.stage*4 + stars*15;
+  const isMilestone = G.mode==='theme' && G.stage%MILESTONE_EVERY===0;
+  const isFinal = G.mode==='theme' && G.stage===MAX_STAGE;
+  const milestoneBonus = isFinal?1000:(isMilestone?200:0);
+  const coinGain = 30 + G.stage*4 + stars*15 + milestoneBonus;
+  SAVE.coins=(SAVE.coins||0) + coinGain;
   if(G.mode==='theme'){
     if(!SAVE.theme.levelStars) SAVE.theme.levelStars={};
     const prev=SAVE.theme.levelStars[G.stage]||0;
@@ -1419,20 +1429,32 @@ function win(){
   addShake(8+stars*2); flash(0.3);
   let extra='';
   if(G.mode==='theme'){
-    const nextGoal=CATS[(G.stage)%CATS.length];
-    extra=`<p>목표 단어를 모두 만들었어요 🎉</p>
-      <p style="margin-top:8px;font-size:14px;opacity:.85">다음 주제: <b>${nextGoal}</b></p>`;
+    if(isFinal){
+      extra=`<p>🏆 500 스테이지를 모두 완주했어요!</p><p style="font-size:14px;opacity:.85">정말 대단해요. 계속해서 도전할 수 있어요.</p>`;
+    }else if(isMilestone){
+      extra=`<p>🎁 마일스톤 달성! 보너스 코인 +${milestoneBonus}</p>`;
+    }else{
+      const nextGoal=CATS[(G.stage)%CATS.length];
+      extra=`<p>목표 단어를 모두 만들었어요 🎉</p>
+        <p style="margin-top:8px;font-size:14px;opacity:.85">다음 주제: <b>${nextGoal}</b></p>`;
+    }
   }else{
     extra=`<p>목표 단어 개수를 달성했어요 🎉</p>`;
   }
   const mapBtn = G.mode==='theme' ? `<a href="#" id="toMap" style="display:block;margin-top:10px;color:#d9a94a;font-size:14px">🗺️ 지도로 보기</a>` : '';
+  const nextBtnLabel = isFinal ? '한번 더 플레이' : '다음 스테이지';
   show(`<h2>스테이지 ${G.stage} 완료!</h2>
     ${starRow(stars)}
     ${extra}
-    <p>점수 <b>${G.score.toLocaleString()}</b> · 💰+${30+G.stage*4+stars*15}</p>
-    <button class="btn" id="go">다음 스테이지</button>
+    <p>점수 <b>${G.score.toLocaleString()}</b> · 💰+${coinGain}</p>
+    <button class="btn" id="go">${nextBtnLabel}</button>
     ${mapBtn}`);
-  document.getElementById('go').onclick=()=>{SFX.click();G.stage++;hide();G.locked=false;buildStage();saveGame(true);};
+  document.getElementById('go').onclick=()=>{
+    SFX.click();
+    if(G.mode==='theme'){ G.stage=Math.min(G.stage+1, MAX_STAGE); }
+    else{ G.stage++; }
+    hide();G.locked=false;buildStage();saveGame(true);
+  };
   const toMapBtn=document.getElementById('toMap');
   if(toMapBtn) toMapBtn.onclick=(ev)=>{ ev.preventDefault(); SFX.click(); hide(); G.locked=true; openMap(); };
 }
@@ -1484,19 +1506,27 @@ function intro(){
 function openMap(){
   const stars=SAVE.theme.levelStars||{};
   let maxUnlocked=1;
-  for(let i=1;i<=200;i++){ if(stars[i]!=null) maxUnlocked=i+1; }
-  const TOTAL=Math.max(maxUnlocked+6, 12);  // 다음 몇 단계까지 미리 보여줌
+  for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; }
+  maxUnlocked=Math.min(maxUnlocked, MAX_STAGE);
+  const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null;
+  const TOTAL=Math.min(MAX_STAGE, Math.max(maxUnlocked+6, 12));  // 다음 몇 단계까지 미리 보여줌
   const scrollEl=document.getElementById('mapScroll');
   let html='';
+  if(allCleared){
+    html += `<div style="color:#f5e3ae;text-align:center;font-size:14px;padding:10px 20px;margin-bottom:6px">🏆 500 스테이지 완주! 대단해요</div>`;
+  }
   for(let lv=1; lv<=TOTAL; lv++){
     const done = stars[lv]!=null;
     const isNext = !done && lv===maxUnlocked;
     const locked = !done && !isNext;
-    const cat=CATS[(lv-1)%CATS.length];
+    const isMilestone = lv%MILESTONE_EVERY===0;
+    const isFinal = lv===MAX_STAGE;
     const cls = done?'done':(isNext?'next':'locked');
+    const extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':'');
     const starTxt = done ? '★'.repeat(stars[lv])+'<span style="opacity:.3">'+'★'.repeat(3-stars[lv])+'</span>' : '';
-    html += `<div class="mnode ${cls}" data-lv="${lv}" style="align-self:${lv%2===0?'flex-start':'flex-end'};margin-${lv%2===0?'left':'right'}:18%">
-      ${locked?'<span class="mlock">🔒</span>':(lv)}
+    const icon = isFinal ? '👑' : (isMilestone ? '🎁' : lv);
+    html += `<div class="mnode ${cls}${extraCls}" data-lv="${lv}" style="align-self:${lv%2===0?'flex-start':'flex-end'};margin-${lv%2===0?'left':'right'}:18%">
+      ${locked?'<span class="mlock">🔒</span>':icon}
       ${done?`<span class="mstars">${starTxt}</span>`:''}
     </div>`;
   }
