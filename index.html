@@ -1598,7 +1598,7 @@ function openMap(){
   const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null;
   const scrollEl=document.getElementById('mapScroll');
   const TOPPAD=60, BOTPAD=60;
-  const ZONE_SCALE=1.9;  // 세로로 넉넉하게 늘려 "올라가는" 느낌 + 답답함 완화
+  const ZONE_SCALE=2.4;  // 세로로 넉넉하게 늘려 "올라가는" 느낌 + 답답함 완화 (위치는 그대로 유지)
 
   // 현재 있는 구간까지만 완전 렌더 (각 구간=실제 나뭇잎 이미지 1장)
   const curZone=zoneIdx(maxUnlocked);
@@ -1612,38 +1612,14 @@ function openMap(){
     zoneBot[z] = H - BOTPAD - z*zoneH;
     zoneTop[z] = zoneBot[z] - zoneH;
   }
-  function rawNodePos(lv){
+  // 실제 찍힌 좌표를 그대로 사용(보정 없음) — 세로 간격은 ZONE_SCALE로만 확보
+  function nodePos(lv){
     const z=zoneIdx(lv);
     const idx=lv-ZONE_START[z];
     const raw = (LEAF_POINTS[ZONES[z].key]||[])[idx] || [50,50];
-    const gxPx = raw[0]/100*containerW;
+    const gx = raw[0];
     const gy = zoneTop[z] + (raw[1]/100)*zoneH;
-    return {xPx:gxPx, y:gy};
-  }
-  // 연속된 노드끼리 너무 가까우면(카드 겹침) 살짝 밀어내는 보정 — 경로 방향은 유지
-  const MIN_GAP=56;
-  function declutter(seqLvs){
-    const out={};
-    let prev=null;
-    seqLvs.forEach(lv=>{
-      let p=rawNodePos(lv);
-      if(prev){
-        const dx=p.xPx-prev.xPx, dy=p.y-prev.y;
-        const d=Math.hypot(dx,dy);
-        if(d>0 && d<MIN_GAP){
-          const s=MIN_GAP/d;
-          p={xPx:prev.xPx+dx*s, y:prev.y+dy*s};
-        }
-      }
-      out[lv]=p; prev=p;
-    });
-    return out;
-  }
-  const allLvs=[]; for(let lv=1; lv<=ZONE_END[curZone]; lv++) allLvs.push(lv);
-  const declPos=declutter(allLvs);
-  function nodePos(lv){
-    const p=declPos[lv];
-    return {x: p.xPx/containerW*100, y: p.y};
+    return {x:gx, y:gy};
   }
 
   // 구간 배경 이미지(실제 나뭇잎 그림, 반복 없이 원본 비율 그대로)
