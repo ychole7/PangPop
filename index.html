@@ -108,21 +108,25 @@
     background-repeat:repeat-y;background-size:100% auto;
     background-position:top center;background-attachment:local}
   #mapClose{position:absolute;top:12px;right:12px;z-index:7;width:38px;height:38px;padding:0;border-radius:50%}
-  .mnode{position:relative;width:76px;height:76px;margin:14px 0;display:flex;align-items:center;justify-content:center;
-    border-radius:50%;font-family:'Pretendard',sans-serif;font-weight:800;font-size:24px;
-    border:3px solid #8a5f22;box-shadow:0 4px 10px rgba(0,0,0,.4)}
-  .mnode.done{background:radial-gradient(circle at 35% 30%,#e8c169,#a8792f);color:#3a2408;border-color:#fff0c0}
-  .mnode.next{background:radial-gradient(circle at 35% 30%,#8fc98a,#4f8a52);color:#0f2a10;border-color:#c8ffb0;
+  .mnode{position:relative;width:64px;height:64px;margin:16px 0;display:flex;align-items:center;justify-content:center;
+    font-family:'Pretendard',sans-serif;font-weight:800;font-size:25px;
+    background:transparent;border:none;box-shadow:none}
+  .mnode.done{color:#ffe9a0;
+    text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7),0 2px 3px rgba(0,0,0,.9),0 0 14px rgba(255,224,140,.6)}
+  .mnode.next{color:#f4fff0;
+    text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7),0 2px 3px rgba(0,0,0,.9),0 0 16px rgba(140,255,150,.75);
     animation:nodepulse 1.3s ease-in-out infinite}
-  .mnode.locked{background:rgba(40,30,20,.7);color:rgba(255,255,255,.35);border-color:rgba(140,100,50,.4)}
-  @keyframes nodepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-  .mnode .mstars{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:13px;
-    color:#ffe08c;text-shadow:0 1px 2px rgba(0,0,0,.7);white-space:nowrap;letter-spacing:1px}
-  .mnode .mlock{position:absolute;font-size:22px;opacity:.6}
-  .mnode.mmilestone{width:88px;height:88px;font-size:30px}
-  .mnode.mfinal{width:100px;height:100px;font-size:36px;
-    background:radial-gradient(circle at 35% 30%,#fff3c4,#e8c169);border-color:#fff8e0;
-    box-shadow:0 0 20px rgba(255,224,140,.7),0 4px 10px rgba(0,0,0,.4)}
+  .mnode.locked{color:rgba(255,255,255,.55);
+    text-shadow:0 0 5px rgba(0,0,0,.85),0 2px 3px rgba(0,0,0,.9)}
+  @keyframes nodepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+  .mnode .mstar{position:absolute;transform:translateX(-50%);font-size:13px;
+    color:#ffe08c;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+  .mnode .mlock{position:absolute;font-size:24px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.8))}
+  .mnode .mdone-halo{position:absolute;inset:-14px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,224,140,.35) 0%,rgba(255,224,140,0) 70%)}
+  .mnode.mmilestone{font-size:30px}
+  .mnode.mfinal{font-size:38px;
+    text-shadow:0 0 8px rgba(0,0,0,.9),0 2px 4px rgba(0,0,0,.9),0 0 20px rgba(255,224,140,.85)}
 </style>
 </head>
 <body>
@@ -1296,25 +1300,23 @@ document.getElementById('btnRainbow').onclick=()=>{
 document.getElementById('btnMenu').onclick=()=>{
   if(veil.classList.contains('on'))return;
   G.locked=true;
-  const info = G.mode==='free'
-    ? `<p>챌린지 모드 · 스테이지 ${G.stage}</p>`
-    : `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p>
+  const info = `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p>
        <div>${G.targets.map(w=>`<span class="chip" style="${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
   show(`<h2>메뉴</h2>
     ${info}
     <button class="btn" id="go">이어서 하기</button>
     <p style="margin-top:12px;font-size:14px">
-      <a href="#" id="switch" style="color:#d9a94a">${G.mode==='free'?'주제 모드로 전환':'챌린지 모드로 전환'}</a>
+      <a href="#" id="switch" style="color:#d9a94a">🗺️ 지도로 이동</a>
       &nbsp;·&nbsp;
-      <a href="#" id="restart" style="color:#ff9a5c">처음부터</a>
+      <a href="#" id="restart" style="color:#ff9a5c">이 스테이지 재시작</a>
     </p>
     <button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 8px #ffd86f;box-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
   document.getElementById('go').onclick=()=>{hide();G.locked=false;};
   document.getElementById('switch').onclick=ev=>{
-    ev.preventDefault();hide();G.mode=(G.mode==='free'?'theme':'free');startGame();
+    ev.preventDefault();hide();openMap();
   };
   document.getElementById('restart').onclick=ev=>{
-    ev.preventDefault();hide();startGame();
+    ev.preventDefault();hide();startGame(false, G.stage);
   };
   document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
 };
@@ -1328,7 +1330,7 @@ function syncUI(){
   document.getElementById('uiStage').textContent=G.stage;
   const uc=document.getElementById('uiCoins'); if(uc) uc.textContent=(SAVE.coins||0).toLocaleString();
   const usb=document.getElementById('uiScoreBig'); if(usb) usb.textContent=G.score.toLocaleString();
-  document.getElementById('uiGoal').textContent=(G.mode==='free'?'챌린지':G.goal);
+  document.getElementById('uiGoal').textContent=G.goal;
   document.getElementById('uiCombo').textContent='x'+Math.max(1,Math.min(G.combo,5));
   document.getElementById('uiSwap').textContent=G.swaps;
   document.getElementById('uiHint').textContent=G.hints;
@@ -1487,22 +1489,15 @@ function lose(){
   document.getElementById('go').onclick=()=>{hide();G.locked=false;G.score=0;buildStage();};
 }
 function intro(){
-  const hasFree = SAVE.free && (SAVE.free.stage>1 || SAVE.free.score>0);
-  const hasTheme = SAVE.theme && (SAVE.theme.stage>1 || SAVE.theme.score>0);
-  const bestLine = (SAVE.free.bestScore||SAVE.theme.bestScore)
-    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 · 주제 ${(SAVE.theme.bestScore||0).toLocaleString()} / 챌린지 ${(SAVE.free.bestScore||0).toLocaleString()}</p>
+  const bestLine = SAVE.theme.bestScore
+    ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 <b>${(SAVE.theme.bestScore||0).toLocaleString()}</b></p>
        <p style="font-size:13px;opacity:.8;margin-top:2px">⭐ 모은 별 <b style="color:#ffe08c">${SAVE.totalStars||0}</b>개</p>`
     : '';
   show(`<h2>낱글자 팡팡!</h2>
     <p>버블을 쏘아 <b>가로·대각선</b>으로<br>낱글자를 이어 단어를 만들면 팡!</p>
     ${bestLine}
-    <p style="margin-top:14px">모드를 골라주세요</p>
-    <button class="btn" id="mTheme" style="display:block;margin:12px auto 0;font-size:20px;padding:14px 32px">📚 주제 모드${hasTheme?` <span style="font-size:12px;opacity:.8">이어하기 S${SAVE.theme.stage}</span>`:''}</button>
-    <p style="font-size:13px;opacity:.7;margin:4px 0 0">주제별 목표 단어를 완성하며 배우기</p>
-    <button class="btn" id="mFree" style="border-color:#ff8fdc;text-shadow:0 0 8px #ff8fdc;box-shadow:0 0 12px rgba(255,143,220,.4),inset 0 0 10px rgba(255,143,220,.18);display:block;margin:16px auto 0;font-size:15px;padding:9px 20px;opacity:.85">🎯 챌린지 모드${hasFree?` <span style="font-size:11px;opacity:.8">이어하기 S${SAVE.free.stage}</span>`:''}</button>
-    <p style="font-size:12px;opacity:.6;margin:4px 0 0">아무 단어나 자유롭게, 빠르게 점수 쌓기</p>
-    ${(hasFree||hasTheme)?'<p style="font-size:12px;opacity:.55;margin-top:10px">버튼을 누르면 저장된 진행에서 이어집니다</p>':''}`);
-  document.getElementById('mFree').onclick=()=>{ SFX.click(); G.mode='free'; hide(); startGame(hasFree); };
+    <button class="btn" id="mTheme" style="display:block;margin:16px auto 0;font-size:20px;padding:14px 32px">🗺️ 모험 시작하기</button>
+    <p style="font-size:13px;opacity:.7;margin:6px 0 0">주제별 목표 단어를 완성하며 500단계까지!</p>`);
   document.getElementById('mTheme').onclick=()=>{ SFX.click(); G.mode='theme'; hide(); openMap(); };
 }
 function openMap(){
@@ -1525,11 +1520,15 @@ function openMap(){
     const isFinal = lv===MAX_STAGE;
     const cls = done?'done':(isNext?'next':'locked');
     const extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':'');
-    const starTxt = done ? '★'.repeat(stars[lv])+'<span style="opacity:.3">'+'★'.repeat(3-stars[lv])+'</span>' : '';
+    const starSpots=[[-16,-2],[0,-8],[16,-2]];  // 좌·중·우, 중앙이 더 위로
+    const starHtml = done ? starSpots.map((p,i)=>
+      `<span class="mstar" style="left:calc(50% + ${p[0]}px);top:${p[1]}px">${i<stars[lv]?'★':'<span style=\'opacity:.35\'>★</span>'}</span>`
+    ).join('') : '';
     const icon = isFinal ? '👑' : (isMilestone ? '🎁' : lv);
     html += `<div class="mnode ${cls}${extraCls}" data-lv="${lv}" style="align-self:${lv%2===0?'flex-start':'flex-end'};margin-${lv%2===0?'left':'right'}:18%">
+      ${done?'<span class="mdone-halo"></span>':''}
       ${locked?'<span class="mlock">🔒</span>':icon}
-      ${done?`<span class="mstars">${starTxt}</span>`:''}
+      ${starHtml}
     </div>`;
   }
   scrollEl.innerHTML=html;
