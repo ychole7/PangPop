@@ -114,25 +114,25 @@
     display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.7)}
   .stab.active{border-color:#ffd76a;color:#fff6da;box-shadow:0 0 8px rgba(255,215,106,.6)}
   .stab.locked{opacity:.35;pointer-events:none}
-  .mnode{position:absolute;width:64px;height:64px;display:flex;align-items:center;justify-content:center;
+  .mnode{position:absolute;width:40px;height:40px;display:flex;align-items:center;justify-content:center;
     transform:translate(-50%,-50%);
-    font-family:'Pretendard',sans-serif;font-weight:800;font-size:25px;
+    font-family:'Pretendard',sans-serif;font-weight:800;font-size:16px;
     background:transparent;border:none;box-shadow:none;z-index:2}
   .mnode.done{color:#ffe9a0;
-    text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7),0 2px 3px rgba(0,0,0,.9),0 0 14px rgba(255,224,140,.6)}
+    text-shadow:0 0 5px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9),0 0 10px rgba(255,224,140,.6)}
   .mnode.next{color:#f4fff0;
-    text-shadow:0 0 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7),0 2px 3px rgba(0,0,0,.9),0 0 16px rgba(140,255,150,.75);
+    text-shadow:0 0 5px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.7),0 1px 2px rgba(0,0,0,.9),0 0 12px rgba(140,255,150,.75);
     animation:nodepulse 1.3s ease-in-out infinite}
   .mnode.locked{color:rgba(255,255,255,.55);
-    text-shadow:0 0 5px rgba(0,0,0,.85),0 2px 3px rgba(0,0,0,.9)}
+    text-shadow:0 0 4px rgba(0,0,0,.85),0 1px 2px rgba(0,0,0,.9)}
   @keyframes nodepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-  .mnode .mstar{position:absolute;transform:translateX(-50%);font-size:13px;
-    color:#ffe08c;text-shadow:0 1px 3px rgba(0,0,0,.9)}
-  .mnode .mlock{position:absolute;font-size:24px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.8))}
-  .mnode .mdone-halo{position:absolute;inset:-14px;border-radius:50%;pointer-events:none;
+  .mnode .mstar{position:absolute;transform:translateX(-50%);font-size:9px;
+    color:#ffe08c;text-shadow:0 1px 2px rgba(0,0,0,.9)}
+  .mnode .mlock{position:absolute;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+  .mnode .mdone-halo{position:absolute;inset:-8px;border-radius:50%;pointer-events:none;
     background:radial-gradient(circle,rgba(255,224,140,.35) 0%,rgba(255,224,140,0) 70%)}
-  .mnode.mmilestone{font-size:30px}
-  .mnode.mfinal{font-size:38px;
+  .mnode.mmilestone{font-size:19px}
+  .mnode.mfinal{font-size:24px;
     text-shadow:0 0 8px rgba(0,0,0,.9),0 2px 4px rgba(0,0,0,.9),0 0 20px rgba(255,224,140,.85)}
 </style>
 </head>
@@ -1641,7 +1641,7 @@ function openMap(){
     const extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':'');
     const p=nodePos(lv);
     pathPts.push([p.x,p.y]);
-    const starSpots=[[-16,-2],[0,-8],[16,-2]];
+    const starSpots=[[-10,-1],[0,-5],[10,-1]];
     const starHtml = done ? starSpots.map((sp,i)=>
       `<span class="mstar" style="left:calc(50% + ${sp[0]}px);top:${sp[1]}px">${i<stars[lv]?'★':'<span style=\'opacity:.35\'>★</span>'}</span>`
     ).join('') : '';
