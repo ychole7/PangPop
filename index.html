@@ -66,10 +66,10 @@
   #stage{flex:1;min-height:0;position:relative}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
-  #itemBar{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:8px;z-index:2}
-  #trayBtn{position:absolute;left:76px;bottom:12px;z-index:3;width:46px;height:46px;padding:0;
-    border-radius:50%;font-size:19px}
-  #tray{position:absolute;left:76px;bottom:64px;display:flex;flex-direction:column;gap:8px;z-index:2;
+  #itemBar{position:absolute;right:14px;bottom:16px;display:flex;flex-direction:row-reverse;gap:8px;z-index:2}
+  #trayBtn{position:absolute;right:14px;bottom:70px;z-index:3;width:44px;height:44px;padding:0;
+    border-radius:50%;font-size:18px}
+  #tray{position:absolute;right:14px;bottom:120px;display:flex;flex-direction:column;gap:8px;z-index:2;
     opacity:0;pointer-events:none;transform:translateY(8px);transition:.18s}
   #tray.open{opacity:1;pointer-events:auto;transform:translateY(0)}
   .fab{background:rgba(40,26,14,.6);border:2px solid #a86f2e;
@@ -1008,7 +1008,7 @@ function drawBoardRaw(){
   ctx.fillStyle='rgba(20,12,6,.16)';ctx.fill();
   ctx.restore();
 }
-const CANNON_W=6.2, CANNON_OFF=0.15;   // 스팀펑크 대포(가로형, 회전없음)
+const CANNON_W=4.8, CANNON_OFF=0.15;   // 스팀펑크 대포(축소)
 // 대포 이미지 안에서 파이프(발사구) 중심의 상대위치 (이미지 폭/높이 대비 0~1)
 const PIPE_X_RATIO=0.52, PIPE_Y_RATIO=0.05;
 function pipePos(){
