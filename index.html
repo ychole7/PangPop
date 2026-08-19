@@ -1598,28 +1598,52 @@ function openMap(){
   const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null;
   const scrollEl=document.getElementById('mapScroll');
   const TOPPAD=60, BOTPAD=60;
+  const ZONE_SCALE=1.9;  // 세로로 넉넉하게 늘려 "올라가는" 느낌 + 답답함 완화
 
-  // 현재 있는 구간까지만 완전 렌더 (각 구간=실제 나뭇잎 이미지 1장, 100스테이지 전부 표시)
+  // 현재 있는 구간까지만 완전 렌더 (각 구간=실제 나뭇잎 이미지 1장)
   const curZone=zoneIdx(maxUnlocked);
   const containerW=scrollEl.clientWidth||390;
-  const zoneH=containerW*(LEAF_IMG_H/LEAF_IMG_W);   // 이미지 원본 비율대로 렌더 높이
+  const zoneH=containerW*(LEAF_IMG_H/LEAF_IMG_W)*ZONE_SCALE;
 
-  // 구간별 세로 배치: zone0(1~100)이 맨 아래, 위로 갈수록 zone번호 증가
+  // 구간별 세로 배치: zone0이 맨 아래, 위로 갈수록 zone번호 증가
   const zoneTop=[], zoneBot=[];
-  let cursor=0; // 위에서부터 누적(나중에 뒤집어 계산)
-  for(let z=0; z<=curZone; z++){ zoneTop[z]=0; zoneBot[z]=0; } // placeholder
   const H = (curZone+1)*zoneH + TOPPAD + BOTPAD;
   for(let z=0; z<=curZone; z++){
     zoneBot[z] = H - BOTPAD - z*zoneH;
     zoneTop[z] = zoneBot[z] - zoneH;
   }
-  function nodePos(lv){
+  function rawNodePos(lv){
     const z=zoneIdx(lv);
-    const idx=lv-ZONE_START[z]; // 구간 내 0-based 실제 인덱스
+    const idx=lv-ZONE_START[z];
     const raw = (LEAF_POINTS[ZONES[z].key]||[])[idx] || [50,50];
-    const gx = raw[0]; // 0~100%, 컨테이너 폭 기준 그대로 사용
+    const gxPx = raw[0]/100*containerW;
     const gy = zoneTop[z] + (raw[1]/100)*zoneH;
-    return {x:gx, y:gy};
+    return {xPx:gxPx, y:gy};
+  }
+  // 연속된 노드끼리 너무 가까우면(카드 겹침) 살짝 밀어내는 보정 — 경로 방향은 유지
+  const MIN_GAP=56;
+  function declutter(seqLvs){
+    const out={};
+    let prev=null;
+    seqLvs.forEach(lv=>{
+      let p=rawNodePos(lv);
+      if(prev){
+        const dx=p.xPx-prev.xPx, dy=p.y-prev.y;
+        const d=Math.hypot(dx,dy);
+        if(d>0 && d<MIN_GAP){
+          const s=MIN_GAP/d;
+          p={xPx:prev.xPx+dx*s, y:prev.y+dy*s};
+        }
+      }
+      out[lv]=p; prev=p;
+    });
+    return out;
+  }
+  const allLvs=[]; for(let lv=1; lv<=ZONE_END[curZone]; lv++) allLvs.push(lv);
+  const declPos=declutter(allLvs);
+  function nodePos(lv){
+    const p=declPos[lv];
+    return {x: p.xPx/containerW*100, y: p.y};
   }
 
   // 구간 배경 이미지(실제 나뭇잎 그림, 반복 없이 원본 비율 그대로)
