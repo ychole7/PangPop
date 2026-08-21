@@ -12,45 +12,44 @@
 </head>
 <body>
 
+<!-- 전체 앱 배경 (검은/다크우드 여백 역할) -->
 <div id="app">
-  <!-- ✨ 1단: 전체 화면을 꽉 채우는 100% 배경 풍경 -->
-  <div id="bgLayer"></div>
-
-  <!-- ✨ 2단: 화면 겉에 둥둥 떠 있는 UI (어떤 기기든 절대 안 가려짐) -->
-  <div id="topTier">
-    <header>
-      <div class="left-buttons">
-        <button class="icon-btn" id="btnMenu">❚❚</button>
-        <button class="icon-btn" id="btnMute">🔊</button>
-        <button class="icon-btn" id="btnShop">🛒</button>
-      </div>
-      <div class="right-stats">
-        <div class="stat-pill">❤️<b id="uiLives">6</b></div>
-        <div class="stat-pill">S<b id="uiStage">1</b></div>
-        <div class="stat-pill">💰<b id="uiCoins">0</b></div>
-      </div>
-    </header>
-    <div id="targetBar"></div>
-  </div>
   
-  <!-- ✨ 3단: 진짜 반응형 게임판 (가운데 쏙 들어감) -->
-  <div id="gameContainer">
-    <!-- 우리가 만든 투명 나무판! -->
-    <img src="assets/board_frame.png" id="boardBg" alt="game board">
-    <!-- 고급스러운 새 점수판 -->
+  <!-- ✨ 핵심: 완벽한 비율을 유지하는 강철 게임 박스 -->
+  <div id="gameWrapper">
+    
+    <!-- 상단 UI -->
+    <div id="topTier">
+      <header>
+        <div class="left-buttons">
+          <button class="icon-btn" id="btnMenu">❚❚</button>
+          <button class="icon-btn" id="btnMute">🔊</button>
+          <button class="icon-btn" id="btnShop">🛒</button>
+        </div>
+        <div class="right-stats">
+          <div class="stat-pill">❤️<b id="uiLives">6</b></div>
+          <div class="stat-pill">S<b id="uiStage">1</b></div>
+          <div class="stat-pill">💰<b id="uiCoins">0</b></div>
+        </div>
+      </header>
+      <div id="targetBar"></div>
+    </div>
+    
+    <!-- 게임 캔버스와 두루마리 점수판 -->
     <div id="scoreScroll"><b id="uiScoreBig">0</b></div>
-    <!-- 찰흙 버블이 그려질 진짜 도화지 -->
     <canvas id="cv"></canvas>
+    
+    <!-- 하단 아이템 -->
+    <div id="bottomTier">
+      <button class="item-btn" id="btnHint">💡<b id="uiHint">3</b></button>
+      <button class="item-btn" id="btnSwap">🔄<b id="uiSwap">3</b></button>
+      <button class="item-btn" id="btnBomb">💣<b id="uiBomb">2</b></button>
+      <button class="item-btn" id="btnRainbow">🌈<b id="uiRainbow">2</b></button>
+    </div>
+    
   </div>
 
-  <div id="bottomTier">
-    <button class="item-btn" id="btnHint">💡<b id="uiHint">3</b></button>
-    <button class="item-btn" id="btnSwap">🔄<b id="uiSwap">3</b></button>
-    <button class="item-btn" id="btnBomb">💣<b id="uiBomb">2</b></button>
-    <button class="item-btn" id="btnRainbow">🌈<b id="uiRainbow">2</b></button>
-  </div>
-
-  <!-- 지도 및 팝업창 -->
+  <!-- 지도 및 모달창 -->
   <div class="veil" id="veil"><div class="card" id="card"></div></div>
   <div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
 </div>
