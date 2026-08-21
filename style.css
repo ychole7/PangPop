@@ -1,65 +1,58 @@
-:root{ --bg:#2a1c12; --line:rgba(200,160,90,.10); --cyan:#d9a94a; --ink:#f0e2c4; }
+:root{ --bg:#2a1c12; --cyan:#d9a94a; --ink:#5a3a22; }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#050302;}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#000;}
 body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:700;user-select:none;touch-action:none;}
 
-/* 바깥쪽 화면 (비율이 안 맞는 기기일 경우 남는 배경) */
 #app {
-  display: flex; align-items: center; justify-content: center;
-  width: 100vw; height: 100dvh; background: #0a0604;
+  position: relative; width: 100vw; height: 100dvh; overflow: hidden;
 }
 
-/* ✨ 마법의 강철 박스: 어떤 화면이든 무조건 900:1572 비율 고정 */
-#gameWrapper {
-  position: relative;
-  width: 100vw; height: calc(100vw * 1572 / 900);
-  max-height: 100dvh; max-width: calc(100dvh * 900 / 1572);
-  /* 오리지널 웅장한 배경 부활! */
-  background: url('assets/bg_hanok.jpg') center / 100% 100% no-repeat;
-  box-shadow: 0 0 40px rgba(0,0,0,0.8);
-  overflow: hidden;
+/* ✨ 1. 순수 배경: 기기 화면 비율에 맞춰 알아서 꽉 차게 잘립니다 */
+#bgLayer {
+  position: absolute; inset: 0; z-index: 0;
+  background: url('assets/bg_main.png') center / cover no-repeat;
 }
 
-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-index:2; }
-
-/* 상단 UI 위치 */
-#topTier {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 10; pointer-events: none;
+/* ✨ 2. 상단 UI: 화면 맨 위에 고정되는 패널 */
+#topUI {
+  position: absolute; top: 0; left: 0; width: 100%; height: 180px; z-index: 10;
+  background: url('assets/ui_top.jpg') center bottom / 100% 100% no-repeat;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  padding-top: max(10px, env(safe-area-inset-top));
 }
-header {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: max(12px, env(safe-area-inset-top)) 16px 8px; pointer-events: auto;
+.top-menu-row { display: flex; gap: 8px; padding: 0 16px; justify-content: flex-start; align-items: center; margin-bottom: 20px;}
+.top-board-row { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; }
+.side-info { text-align: center; color: #f5e3ae; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.big-num { font-size: 24px; display: block; margin-top: 4px; }
+.center-info { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.target-title { font-size: 12px; color: #8c5a2b; margin-bottom: 4px; font-weight: 800; }
+#targetBar { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+
+/* 칩 스타일 (시안 느낌) */
+.tchip { background: #fffdf5; border: 2px solid #dcb274; border-radius: 999px; padding: 4px 12px; font-size: 15px; color: #5a3a22; box-shadow: 0 2px 4px rgba(0,0,0,0.2); white-space: nowrap; }
+.tchip.done { background: #7ba05b; color: #fff; border-color: #55783a; }
+
+/* 공통 작은 버튼 */
+.icon-btn { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(145deg,#4a2e1b,#2a1c0a); border: 2px solid #e8c169; color: #f5e3ae; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); cursor: pointer; padding: 0; }
+.stat-pill { background: rgba(20,12,6,0.85); border: 1.5px solid #a86f2e; border-radius: 999px; padding: 4px 8px; font-size: 12px; color: #f5e3ae; display: flex; align-items: center; gap: 4px; }
+
+/* ✨ 3. 하단 UI: 화면 맨 아래 고정되는 패널 */
+#bottomUI {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 110px; z-index: 10;
+  background: url('assets/ui_bottom.jpg') center top / 100% 100% no-repeat;
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  padding-bottom: env(safe-area-inset-bottom);
 }
-.left-buttons { display: flex; gap: 4px; }
-.right-stats { display: flex; gap: 4px; }
-
-.icon-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(145deg, #4a2e1b, #2a1c0a); border: 2px solid #e8c169; color: #f5e3ae; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.15); text-shadow: 0 1px 2px rgba(0,0,0,0.8); cursor: pointer; padding: 0; }
-.icon-btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.stat-pill { background: rgba(20, 12, 6, 0.85); border: 2px solid #a86f2e; border-radius: 999px; padding: 4px 8px; font-size: 13px; color: #f5e3ae; font-weight: 800; display: flex; align-items: center; gap: 4px; box-shadow: 0 3px 6px rgba(0,0,0,0.5); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-.stat-pill b { color: #fff6e0; text-shadow: 0 1px 3px rgba(40,24,8,0.9); }
-
-#targetBar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; padding: 4px 16px; pointer-events: auto; text-align: center; }
-.target-label { font-size: 12px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); font-weight: 800; background: rgba(30,15,5,0.7); padding: 4px 10px; border-radius: 999px; border: 1.5px solid #a86f2e; }
-.tchip { border: 1.6px solid #a86f2e; border-radius: 999px; background: rgba(40,26,14,.8); padding: 4px 10px; font-size: 13px; color: #f5e3ae; text-shadow: 0 1px 2px rgba(0,0,0,.8); box-shadow: 0 3px 5px rgba(0,0,0,.5); white-space: nowrap; transition: .25s; }
-.tchip.done { border-color: #7ba05b; color: #eafff0; box-shadow: 0 0 10px rgba(123,160,91,.5); background: rgba(123,160,91,.4); }
-
-/* 하단 아이템 위치 */
-#bottomTier {
-  position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: 0; right: 0; z-index: 10;
-  display: flex; justify-content: center; gap: 8px; pointer-events: auto;
-}
-.item-btn { background: linear-gradient(145deg, #4a2e1b, #2a1c0a); border: 2px solid #c8962f; border-radius: 999px; padding: 8px 14px; font-size: 14px; color: #f5e3ae; font-weight: 800; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.15); text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; }
+.item-btn { background: linear-gradient(145deg,#4a2e1b,#2a1c0a); border: 2px solid #c8962f; border-radius: 999px; padding: 8px 14px; font-size: 14px; color: #f5e3ae; font-weight: 800; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
 .item-btn:active { transform: translateY(2px); }
-.item-btn[disabled] { opacity: 0.4; filter: grayscale(1); pointer-events: none; border-color:#666; }
-.item-btn.active{ border-color:#ffd76a; color:#fff6da; box-shadow:0 0 14px rgba(255,215,106,.7); animation:itempulse 1s ease-in-out infinite; }
-@keyframes itempulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.item-btn[disabled] { opacity: 0.5; filter: grayscale(1); pointer-events: none; border-color:#666; }
+.item-btn.active{ border-color:#ffd76a; color:#fff6da; box-shadow:0 0 14px rgba(255,215,106,.7); }
 
-/* 두루마리 점수판 위치 강제 고정 */
-#scoreScroll {
-  position: absolute; z-index: 3; display: flex; align-items: center; justify-content: center;
-  pointer-events: none; color: #4a2a10; font-weight: 900; text-shadow: 0 1px 2px rgba(255,255,255,0.6);
-  font-family:'Pretendard',sans-serif; letter-spacing: 1px;
+/* ✨ 4. 게임 구역 (상하단 UI 사이 남는 공간 전체 활용!) */
+#gameArea {
+  position: absolute; top: 180px; bottom: 110px; left: 0; width: 100%; z-index: 5;
 }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* 팝업 모달창 (기존 동일) */
 .veil{position:absolute;inset:0;display:none;place-items:center;background:rgba(10,5,2,.85);backdrop-filter:blur(4px);z-index:50;}
@@ -70,7 +63,6 @@ header {
 .card p b{color:#fff6da;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .btn{margin-top:16px;background:linear-gradient(180deg,#e8c169,#c8962f);border:2px solid #8a5f22;border-radius:999px;padding:12px 30px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:19px;color:#2a1c0a;text-shadow:0 1px 1px rgba(255,255,255,.3);box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 2px rgba(255,255,255,.4); cursor:pointer;}
 .btn:active{transform:translateY(3px)}
-.chip{display:inline-block;border:1.5px solid #a86f2e;border-radius:999px;padding:4px 12px;margin:3px;background:rgba(40,26,14,.5);font-size:14px;color:#f5e3ae;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 
 /* 지도 화면 */
 #mapVeil{position:absolute;inset:0;display:none;z-index:100;background:#1c2b1c}
@@ -82,12 +74,7 @@ header {
 #seasonTabs{position:absolute;top:max(16px, env(safe-area-inset-top));right:12px;z-index:7;display:flex;gap:4px}
 .stab{width:30px;height:30px;border-radius:50%;border:1.5px solid #a86f2e;background:rgba(20,12,6,.65);color:#f5e3ae;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,.7);cursor:pointer;}
 .stab.active{border-color:#ffd76a;color:#fff6da;box-shadow:0 0 8px rgba(255,215,106,.6)}
-.stab.locked{opacity:.35;pointer-events:none}
-.mnode{position:absolute;width:42px;height:42px;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;background-image:url('assets/stone_default.png');background-repeat:no-repeat;background-position:center;background-size:88% auto;border:none;box-shadow:none;z-index:2;cursor:pointer;}
-.mnode.done{color:#3a2a12;background-image:url('assets/stone_clear.png');filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));text-shadow:0 1px 1px rgba(255,255,255,.5)}
-.mnode.next{color:#fff;filter:drop-shadow(0 0 7px rgba(255,170,80,.95)) drop-shadow(0 2px 3px rgba(0,0,0,.5));text-shadow:0 1px 2px rgba(0,0,0,.7);animation:nodepulse 1.3s ease-in-out infinite}
-.mnode.locked{color:#e8e0cc;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)) brightness(.55) saturate(.4);text-shadow:0 1px 2px rgba(0,0,0,.7);cursor:default;}
-.mnode .mstar{position:absolute;transform:translateX(-50%);font-size:9px;color:#ffe08c;text-shadow:0 1px 2px rgba(0,0,0,.9)}
-.mnode .mlock{position:absolute;font-size:15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
-.mnode .mdone-halo{position:absolute;inset:-8px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,224,140,.35) 0%,rgba(255,224,140,0) 70%)}
-.mnode.mfinal{font-size:24px;text-shadow:0 0 8px rgba(0,0,0,.9),0 2px 4px rgba(0,0,0,.9),0 0 20px rgba(255,224,140,.85)}
+.mnode{position:absolute;width:42px;height:42px;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;background-image:url('assets/stone_default.png');background-repeat:no-repeat;background-position:center;background-size:88% auto;z-index:2;cursor:pointer;}
+.mnode.done{color:#3a2a12;background-image:url('assets/stone_clear.png');}
+.mnode.next{color:#fff;filter:drop-shadow(0 0 7px rgba(255,170,80,.95));}
+.mnode.locked{color:#e8e0cc;filter:brightness(.55) saturate(.4);cursor:default;}
