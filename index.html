@@ -1597,6 +1597,15 @@ const PATH_POINTS={
 const PATH_IMG_ASPECT={ forest: 6398/900 };  // height/width
 // ※ LEAF_POINTS(나뭇잎 실좌표)는 맵 전용 이미지를 새로 받으면 다시 사용할 예정 — 지금은 안정성 위해 자동배치로 복귀
 
+// forest 존은 초대형 합성 이미지 1장 대신, 원본 4챕터 이미지를 각각 쌓아서 그린다
+// (모바일 iOS WebKit이 세로로 아주 긴 단일 이미지를 잘못 그리는 문제 회피)
+const FOREST_SUBIMAGES=[
+  {file:'assets/bg_ch4.webp', topFrac:0,                 hFrac:0.2499218505783057},
+  {file:'assets/bg_ch3.webp', topFrac:0.2499218505783057, hFrac:0.25023444826508284},
+  {file:'assets/bg_ch2.webp', topFrac:0.5001562988433885, hFrac:0.2499218505783057},
+  {file:'assets/bg_ch1.webp', topFrac:0.7500781494216943, hFrac:0.2499218505783057}
+];
+
 function openMap(){
   // display:none 상태에서 clientWidth를 재면 항상 0이 나와서 390(기본값)으로 대체되던 버그.
   // 지도 veil을 먼저 켜고(레이아웃 확정) 그 다음에 실제 너비를 측정한다.
@@ -1648,7 +1657,13 @@ function openMap(){
   let zonesHtml='';
   for(let z=0; z<=curZone; z++){
     const key=ZONES[z].key;
-    if(PATH_POINTS[key]){
+    if(key==='forest'){
+      FOREST_SUBIMAGES.forEach(sub=>{
+        const subTop = zoneTop[z] + sub.topFrac*zoneH[z];
+        const subH = sub.hFrac*zoneH[z];
+        zonesHtml += `<img src="${sub.file}" style="position:absolute;left:0;top:${subTop}px;width:100%;height:${subH}px;z-index:0;pointer-events:none">`;
+      });
+    }else if(PATH_POINTS[key]){
       zonesHtml += `<img src="${ZONES[z].img}" style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;z-index:0;pointer-events:none">`;
     }else{
       zonesHtml += `<div style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;overflow:hidden;
