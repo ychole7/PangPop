@@ -83,24 +83,25 @@ function resize(){
   W=Math.max(1,box.width); H=Math.max(1,box.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
+  
   const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
   const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
   const imgOffX=(appBox.width-imgW)/2;
-  const imgOffY=(appBox.height-imgH)/2; /* ✨ 배경을 중앙으로 내린 값을 계산 */
-  document.querySelector('header').style.marginTop = Math.max(0, imgOffY) + 'px'; /* 상단 UI를 배경 상단에 맞게 내림 */
-  const bottomBar = document.getElementById('bottomItemBar');
-  if(bottomBar) bottomBar.style.bottom = Math.max(30, imgOffY + 20) + 'px'; /* 하단 아이템을 배경 하단에 맞게 올림 */
   const stageOffX=box.left-appBox.left, stageOffY=box.top-appBox.top;
+  
+  // 배경 이미지 좌표 계산 (무조건 top 고정으로 여백 방지)
   const bgX=fx=>imgOffX+fx*imgW-stageOffX;
-  const bgY=fy=>imgOffY+fy*imgH-stageOffY; /* ✨ Y좌표에 더해주기 */
+  const bgY=fy=>fy*imgH-stageOffY;
+  
   const scrollEl=document.getElementById('scoreScroll');
   if(scrollEl){
     const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW;
     const sT=0.0350*imgH, sB=0.1240*imgH;
-    scrollEl.style.left=sL+'px'; scrollEl.style.top=(imgOffY+sT)+'px'; /* ✨ 점수판도 같이 내리기 */
+    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
     scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
     scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
   }
+  
   BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right);
   BW=bxRight-BX;
   R=BW/(COLS*2);
@@ -108,7 +109,10 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
   ROWH=R*1.72;
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=bgY(0.815); /* ✨ 대포를 배경 그림의 돌 받침대 위치에 완벽 고정 */
+  
+  // ✨ 대포 위치를 배경 이미지의 돌 받침대(81.5% 지점)에 완벽 고정!
+  G.shooterY=bgY(0.815);
+  
   BH=G.shooterY-BY;
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
