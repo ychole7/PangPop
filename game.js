@@ -510,3 +510,31 @@ if(document.fonts&&document.fonts.ready){
 } else { 
   window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); 
 }
+
+/* ---------- 👇 여기서부터 파일 맨 밑바닥에 추가해주세요 👇 ---------- */
+
+window.addEventListener('load', () => {
+  // 상단 메뉴 버튼 기능
+  const btnMenu=document.getElementById('btnMenu'); if(btnMenu) btnMenu.onclick=()=>{
+    if(veil.classList.contains('on'))return; G.locked=true;
+    const info = `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p> <div>${G.targets.map(w=>`<span class="tchip" style="margin:2px;${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
+    show(`<h2>메뉴</h2>${info}<button class="btn" id="go">이어서 하기</button><p style="margin-top:12px;font-size:14px"><a href="#" id="switch" style="color:#d9a94a">🗺️ 지도로 이동</a> &nbsp;·&nbsp; <a href="#" id="restart" style="color:#ff9a5c">이 스테이지 재시작</a></p><button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
+    document.getElementById('go').onclick=()=>{hide();G.locked=false;}; document.getElementById('switch').onclick=ev=>{ev.preventDefault();hide();openMap();}; document.getElementById('restart').onclick=ev=>{ev.preventDefault();if(!spendLife())return;hide();startGame(false, G.stage);}; document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
+  };
+  
+  // 하단 아이템 및 버튼 기능 연결
+  const btnShop=document.getElementById('btnShop'); if(btnShop) btnShop.onclick=()=>{ if(veil.classList.contains('on'))return; G.locked=true; SFX.click(); openShop(); };
+  const btnSwap=document.getElementById('btnSwap'); if(btnSwap) btnSwap.onclick=()=>{ if(G.swaps<=0||G.fly||G.locked)return; SFX.click(); G.swaps--; const t=G.cur; G.cur=G.queue[0]; G.queue[0]=t; syncUI(); };
+  const btnHint=document.getElementById('btnHint'); if(btnHint) btnHint.onclick=()=>{ if(G.hints<=0||G.fly||G.locked)return; SFX.click(); const hit=completionsFor(G.cur.s); if(!hit.length){toast('이 글자로는 만들 단어가 없어요');return;} hit.sort((a,b)=>(b.cat===G.goal)-(a.cat===G.goal)||b.word.length-a.word.length); G.hints--; G.hintCells=[[hit[0].c,hit[0].r]]; toast(hit[0].word,[[hit[0].c,hit[0].r]]); syncUI(); };
+  const btnBomb=document.getElementById('btnBomb'); if(btnBomb) btnBomb.onclick=()=>{ if(G.bombs<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='bomb' ? null : 'bomb'; syncUI(); };
+  const btnRainbow=document.getElementById('btnRainbow'); if(btnRainbow) btnRainbow.onclick=()=>{ if(G.rainbows<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='rainbow' ? null : 'rainbow'; syncUI(); };
+  const btnMute=document.getElementById('btnMute'); if(btnMute) btnMute.onclick=()=>{ SAVE.soundOn = !soundOn(); try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} syncMuteBtn(); if(soundOn()) SFX.click(); };
+
+  // ✨ 핵심: 화면 터치해서 버블 발사하는 신경망 연결!
+  if(cv) { 
+    cv.addEventListener('pointerdown',e=>{G.dragging=true;aimAt(...localPt(e));}); 
+    cv.addEventListener('pointermove',e=>{if(G.dragging)aimAt(...localPt(e));}); 
+    cv.addEventListener('pointerup',()=>{ if(!G.dragging)return; G.dragging=false; if(G.aim!=null)shoot(G.aim); G.aim=null; }); 
+    cv.addEventListener('pointercancel',()=>{G.dragging=false;G.aim=null;}); 
+  }
+});
