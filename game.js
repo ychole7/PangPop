@@ -87,6 +87,9 @@ function resize(){
   const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
   const imgOffX=(appBox.width-imgW)/2;
   const imgOffY=(appBox.height-imgH)/2; /* ✨ 배경을 중앙으로 내린 값을 계산 */
+  document.querySelector('header').style.marginTop = Math.max(0, imgOffY) + 'px'; /* 상단 UI를 배경 상단에 맞게 내림 */
+  const bottomBar = document.getElementById('bottomItemBar');
+  if(bottomBar) bottomBar.style.bottom = Math.max(30, imgOffY + 20) + 'px'; /* 하단 아이템을 배경 하단에 맞게 올림 */
   const stageOffX=box.left-appBox.left, stageOffY=box.top-appBox.top;
   const bgX=fx=>imgOffX+fx*imgW-stageOffX;
   const bgY=fy=>imgOffY+fy*imgH-stageOffY; /* ✨ Y좌표에 더해주기 */
@@ -105,7 +108,7 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
   ROWH=R*1.72;
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=H*0.655;
+  G.shooterY=bgY(0.815); /* ✨ 대포를 배경 그림의 돌 받침대 위치에 완벽 고정 */
   BH=G.shooterY-BY;
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
