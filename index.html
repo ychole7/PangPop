@@ -1606,7 +1606,8 @@ const FOREST_SUBIMAGES=[
   {file:'assets/bg_ch1.webp', topFrac:0.7500781494216943, hFrac:0.2499218505783057}
 ];
 
-function openMap(){
+function openMap(_isRetry){
+  document.getElementById('mapVeil')?.querySelector('.__dbg')?.remove();
   // display:none 상태에서 clientWidth를 재면 항상 0이 나와서 390(기본값)으로 대체되던 버그.
   // 지도 veil을 먼저 켜고(레이아웃 확정) 그 다음에 실제 너비를 측정한다.
   document.getElementById('mapVeil').classList.add('on');
@@ -1714,12 +1715,25 @@ function openMap(){
   html += zonesHtml + svg + nodesHtml + '</div>';
   scrollEl.innerHTML=html;
 
+  // ── 레이아웃이 완전히 자리잡은 뒤 너비가 처음 측정값과 달라졌으면 다시 그린다 ──
+  // (콘텐츠 삽입 후 게임 자체 리사이즈 로직 등으로 실제 너비가 바뀌는 경우 대응)
+  if(!_isRetry){
+    requestAnimationFrame(()=>{
+      const freshW = scrollEl.clientWidth;
+      if(Math.abs(freshW - containerW) > 2){
+        openMap(true);
+        return;
+      }
+    });
+  }
+
   // ── 임시 디버그 표시 (원인 파악용, 나중에 제거) ──
   const _p1=nodePos(1), _p2=nodePos(2);
   const _dbg=document.createElement('div');
+  _dbg.className='__dbg';
   _dbg.style.cssText='position:fixed;left:4px;top:4px;z-index:999;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;font-family:monospace;padding:6px 8px;border-radius:4px;line-height:1.5;white-space:pre;pointer-events:none';
   _dbg.textContent =
-    `containerW=${containerW}\n`+
+    `containerW=${containerW} (retry=${!!_isRetry})\n`+
     `scrollEl.clientWidth=${scrollEl.clientWidth}\n`+
     `window.innerWidth=${window.innerWidth}\n`+
     `devicePixelRatio=${window.devicePixelRatio}\n`+
