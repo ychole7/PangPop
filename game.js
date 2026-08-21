@@ -1,3 +1,7 @@
+/* ══════════════════════════════════════════
+   낱글자 팡팡! — 한글 단어 버블슈터 (오류 완벽 해결본)
+   ══════════════════════════════════════════ */
+
 const DICT_BY_CAT = {
   '과일': ['사과','포도','딸기','수박','참외','자두','바나나','오렌지','레몬','복숭아','체리','망고','멜론','키위','앵두','살구','자몽','석류','토마토','대추','모과','매실','앵도','귤','감','배','밤','파인애플','블루베리','무화과','한라봉','청포도','머루','다래'],
   '동물': ['사자','호랑이','코끼리','토끼','다람쥐','거북이','고양이','강아지','원숭이','기린','하마','얼룩말','여우','늑대','사슴','너구리','개구리','병아리','오리','돼지','판다','펭귄','악어','고래','두더지','고슴도치','치타','표범','물개','바다표범','부엉이','까치','참새','비둘기','수달','청설모','두루미'],
@@ -20,11 +24,14 @@ function colByIdx(i){ return PALETTE[((i%NCOL)+NCOL)%NCOL]; }
 function colorOf(b){ if(b&&typeof b==='object'&&typeof b.col==='number') return colByIdx(b.col); const ch=(typeof b==='string')?b:(b&&b.s)||''; let h=0; for(let i=0;i<ch.length;i++) h=(h*31+ch.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; }
 function randCol(){ return Math.floor(Math.random()*NCOL); }
 
-const cv=document.getElementById('cv'); let ctx=cv.getContext('2d');
+/* ---------- 필수 변수 및 캔버스 설정 ---------- */
+const cv = document.getElementById('cv');
+const ctx = cv ? cv.getContext('2d') : null;
 let W=0,H=0,R=0,ROWH=0,DPR=1, BX=0,BY=0,BW=0,BH=0;
 const COLS=7, FRAME=9, BG_IMG_W=900, BG_IMG_H=1572, BG_FRAME={left:0.028, right:0.972, top:0.148};
 
 function resize(){
+  if(!cv) return;
   const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
   if(!stageEl || !appEl) return;
   const appBox=appEl.getBoundingClientRect();
@@ -58,6 +65,7 @@ function resize(){
 let _rz; window.addEventListener('resize',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
 window.addEventListener('orientationchange',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
 
+/* ---------- 상태 및 파티클 ---------- */
 const G={ grid:[],parity:0,stage:1,score:0,combo:0,started:false,mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},cur:null,queue:[],fly:null,aim:null,dragging:false,toasts:[],waves:[],pops:[],shake:0,flash:0,shooterY:0,maxRows:10,dryShots:0,swaps:3,hints:3,hintCells:null,bombs:2,rainbows:2,activeItem:null,wordsCompleted:0,freeGoal:8,locked:true,shots:0,trajA:null,trajPts:[],banner:null };
 const PARTICLE_POOL=Array.from({length:100},()=>({active:false,x:0,y:0,vx:0,vy:0,life:0,col:'#000',r:0}));
 function getParticle(){ for(let p of PARTICLE_POOL) if(!p.active) return p; return null; }
@@ -66,8 +74,10 @@ function nbrs(c,r){const o=po(r); return [[c-1,r],[c+1,r],[c-1+o,r-1],[c+o,r-1],
 function at(c,r){ if(r<0||r>=G.grid.length||c<0||c>=cellsIn(r))return null; return G.grid[r][c]; }
 const AXES=[ {fwd:(c,r)=>[c+1,r],back:(c,r)=>[c-1,r]}, {fwd:(c,r)=>[c+po(r),r+1],back:(c,r)=>[c-1+po(r),r-1]}, {fwd:(c,r)=>[c-1+po(r),r+1],back:(c,r)=>[c+po(r),r-1]} ];
 
+/* ---------- 스테이지 빌드 ---------- */
 function buildStage(){
   G.waves=[]; G.pops=[]; G.shake=0; G.flash=0; PARTICLE_POOL.forEach(p=>p.active=false);
+  if(G.mode==='free'){ buildFreeStage(); return; }
   G.goal=CATS[(G.stage-1)%CATS.length];
   const nTarget=Math.min(5,3+Math.floor((G.stage-1)/2));
   const short=shuffle(DICT_BY_CAT[G.goal].filter(w=>w.length===2)), long=shuffle(DICT_BY_CAT[G.goal].filter(w=>w.length>=3));
@@ -81,8 +91,30 @@ function buildStage(){
   const rows=Math.min(G.maxRows, Math.max(2, 2+Math.floor((G.stage-1)/2)));
   G.parity=0; G.grid=[]; _fillCount={};
   for(let r=0;r<rows;r++){ const row=[]; G.grid.push(row); for(let c=0;c<cellsIn(r);c++) row.push({s:fillSyllable(c,r),col:randCol()}); }
-  for(let i=0;i<Math.min(2,G.targets.length);i++) plantWord(G.targets[i],rows);
+  const seeds=shuffle(G.targets.filter(w=>w.length<=3));
+  for(let i=0;i<Math.min(2,seeds.length);i++) plantWord(seeds[i],rows);
   plantWord(pick(main),rows);
+  
+  const all=[]; for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++) if(at(c,r)) all.push([c,r]);
+  shuffle(all); const nGold=1+Math.floor(Math.random()*2), nBomb=Math.random()<0.6?1:0; let idx=0;
+  for(let i=0;i<nGold && idx<all.length;i++,idx++) G.grid[all[idx][1]][all[idx][0]].special='gold';
+  for(let i=0;i<nBomb && idx<all.length;i++,idx++) G.grid[all[idx][1]][all[idx][0]].special='bomb';
+  
+  G.cur=newCur(); G.queue=[newCur(),newCur()];
+  G.combo=0;G.dryShots=0;G.shots=0;G.hintCells=null;G.swaps=3;G.hints=3;G.bombs=2;G.rainbows=2;G.activeItem=null; syncUI();
+}
+
+function buildFreeStage(){
+  G.waves=[]; G.pops=[]; G.shake=0; G.flash=0; PARTICLE_POOL.forEach(p=>p.active=false);
+  G.goal='자유'; const cats=shuffle([...CATS]);
+  G.words=cats.flatMap(c=>shuffle(DICT_BY_CAT[c]).slice(0,14));
+  if(Math.random()<0.6){ const b=shuffle(BONUS_WORDS); G.words.push(...b.slice(0,3)); }
+  G.words.push(...shuffle(GENERIC_WORDS).slice(0,16));
+  const syl=new Set(); for(const w of G.words) for(const ch of w) syl.add(ch); G.pool=[...syl]; mapColors(G.pool);
+  G.targets=[]; G.done={}; G.wordsCompleted=0; G.freeGoal=6+Math.floor((G.stage-1)*1.5);
+  const rows=Math.min(G.maxRows,4); G.parity=0; G.grid=[]; resetFillCount();
+  for(let r=0;r<rows;r++){ const row=[]; G.grid.push(row); for(let c=0;c<cellsIn(r);c++) row.push({s:fillSyllable(c,r),col:randCol()}); }
+  for(let i=0;i<3;i++) plantWord(pick(G.words.filter(w=>w.length<=3)),rows);
   
   const all=[]; for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++) if(at(c,r)) all.push([c,r]);
   shuffle(all); const nGold=1+Math.floor(Math.random()*2), nBomb=Math.random()<0.6?1:0; let idx=0;
@@ -98,13 +130,13 @@ function plantWord(w,rows){
     const ax=AXES[Math.floor(Math.random()*3)]; let c=Math.floor(Math.random()*COLS),r=Math.floor(Math.random()*rows);
     if(!at(c,r))continue; const cells=[[c,r]]; let ok=true;
     for(let i=1;i<w.length;i++){ [c,r]=ax.fwd(c,r); if(!at(c,r)){ok=false;break;} cells.push([c,r]); }
-    if(!ok)continue;
-    cells.forEach(([cc,rr],i)=>{G.grid[rr][cc].s=w[i];});
+    if(!ok)continue; cells.forEach(([cc,rr],i)=>{G.grid[rr][cc].s=w[i];});
     const gap=Math.floor(Math.random()*w.length); const alt=G.pool.filter(s=>s!==w[gap]);
     if(alt.length) G.grid[cells[gap][1]][cells[gap][0]].s=pick(alt); return;
   }
 }
 
+/* ---------- 탐색 및 판정 ---------- */
 function lineOf(c0,r0,ax){
   const cells=[[c0,r0]]; let c=c0,r=r0;
   for(;;){[c,r]=ax.back(c,r); if(!at(c,r))break; cells.unshift([c,r]);}
@@ -151,11 +183,20 @@ function newCur(){
   _recentSyl.push(chosen); if(_recentSyl.length>3) _recentSyl.shift(); return {s:chosen, col:randCol()};
 }
 
+/* ---------- 버블 쏘기 및 충돌 처리 ---------- */
 function shoot(angle){
   if(G.fly||G.locked)return; const sp=R*0.62, item=G.activeItem;
   if(item==='bomb') G.bombs--; if(item==='rainbow') G.rainbows--; G.activeItem=null;
   const p0=pipePos(); G.fly={x:p0.x,y:p0.y,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp,s:G.cur.s,col:G.cur.col,item};
   G.cur=G.queue.shift(); G.queue.push(newCur()); G.hintCells=null; G.trajA=null; G.shots++; syncUI();
+}
+function hitsBubble(x,y){
+  for(let r=0;r<G.grid.length;r++)
+    for(let c=0;c<cellsIn(r);c++){
+      if(!at(c,r))continue;
+      const dx=x-cx(c,r),dy=y-cy(r); if(dx*dx+dy*dy<(R*1.82)*(R*1.82))return true;
+    }
+  return false;
 }
 function stepFly(){
   const f=G.fly; if(!f)return;
@@ -197,6 +238,7 @@ function floodMatch(c0,r0,key){
   const b0=at(c0,r0); if(!b0)return []; const target=key==='col'?b0.col:b0.s; const seen=new Set(),stack=[[c0,r0]],out=[];
   while(stack.length){ const [c,r]=stack.pop(); const k=c+','+r; if(seen.has(k))continue; seen.add(k); const b=at(c,r); if(!b)continue; const v=key==='col'?b.col:b.s; if(v!==target)continue; out.push([c,r]); for(const [nc,nr] of nbrs(c,r)) stack.push([nc,nr]); } return out;
 }
+function clearCells(cells){ const t0=performance.now(); for(const [cc,rr] of cells) if(G.grid[rr]&&G.grid[rr][cc]) G.grid[rr][cc].glow=t0; }
 function resolve(c,r){
   const word=findWordAt(c,r);
   if(word){
@@ -245,6 +287,7 @@ function checkState(){
   if(count===0){win();return;} if(G.targets.length && G.targets.every(w=>G.done[w])){win();return;} if(cy(lowest)+R>BY+BH) lose();
 }
 
+/* ---------- 효과 및 오디오 ---------- */
 function addShake(amt){ G.shake=Math.min(G.shake+amt, 14); } function addWave(x,y,col,maxR){ G.waves.push({x,y,col,r:R*0.3,maxR:maxR||R*2.4,life:1}); } function addPop(x,y,text,col){ G.pops.push({x,y,text,col:col||'#fff6d0',life:1,vy:-1.2}); } function flash(a){ G.flash=Math.max(G.flash,a); }
 function burst(x,y,col){ for(let i=0;i<14;i++){ const p=getParticle(); if(!p) continue; const a=Math.random()*Math.PI*2,sp=1+Math.random()*4.5; p.active=true; p.x=x; p.y=y; p.vx=Math.cos(a)*sp; p.vy=Math.sin(a)*sp-1; p.life=1; p.col=col; p.r=2+Math.random()*4; } SFX.pop(); }
 function toast(text,cells){ let x=W/2,y=H*0.34; if(cells&&cells.length){ x=cells.reduce((a,[c,r])=>a+cx(c,r),0)/cells.length; y=cells.reduce((a,[c,r])=>a+cy(r),0)/cells.length; } G.toasts.push({text,x,y,life:1}); }
@@ -257,6 +300,7 @@ const SFX={ pop(){ tone(520+Math.random()*260,880,0.17,0.07,'triangle'); }, clic
 const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.png', gem0:'assets/gem_jade.png', gem1:'assets/gem_ruby.png', gem2:'assets/gem_turquoise.png', gem3:'assets/gem_amber.png', gem4:'assets/gem_amethyst.png', gem5:'assets/gem_onyx.png' };
 const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{ const i=new Image(); i.onload=()=>{ASSETS[k]=i;res();}; i.onerror=()=>{res();}; i.src=src; }))); }
 
+/* ---------- 드로잉 ---------- */
 function roundRect(x,y,w,h,r){ ctx.beginPath();ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function neon(col,blur,w,fn){ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.shadowColor=col; ctx.shadowBlur=blur*1.6; fn(); ctx.shadowBlur=blur*.7; fn(); ctx.restore(); }
 function drawBubbleRaw(x,y,r,s,col,glow,special){
@@ -325,6 +369,9 @@ function tick(now){
 function aimAt(px,py){ const dx=px-W/2,dy=py-G.shooterY; let a=Math.atan2(dy,dx); const lim=.22; if(a>-lim)a=-lim; if(a<-Math.PI+lim)a=-Math.PI+lim; G.aim=a; }
 function localPt(e){ if(!cv)return [0,0]; const rect=cv.getBoundingClientRect(); return [e.clientX-rect.left,e.clientY-rect.top]; }
 
+/* ---------- UI 동기화 및 버튼 연결 ---------- */
+function syncMuteBtn(){ const b=document.getElementById('btnMute'); if(b) b.textContent = soundOn() ? '🔊' : '🔇'; }
+
 window.addEventListener('load', () => {
   const btnMenu=document.getElementById('btnMenu'); if(btnMenu) btnMenu.onclick=()=>{
     if(veil.classList.contains('on'))return; G.locked=true;
@@ -337,6 +384,8 @@ window.addEventListener('load', () => {
   const btnHint=document.getElementById('btnHint'); if(btnHint) btnHint.onclick=()=>{ if(G.hints<=0||G.fly||G.locked)return; SFX.click(); const hit=completionsFor(G.cur.s); if(!hit.length){toast('이 글자로는 만들 단어가 없어요');return;} hit.sort((a,b)=>(b.cat===G.goal)-(a.cat===G.goal)||b.word.length-a.word.length); G.hints--; G.hintCells=[[hit[0].c,hit[0].r]]; toast(hit[0].word,[[hit[0].c,hit[0].r]]); syncUI(); };
   const btnBomb=document.getElementById('btnBomb'); if(btnBomb) btnBomb.onclick=()=>{ if(G.bombs<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='bomb' ? null : 'bomb'; syncUI(); };
   const btnRainbow=document.getElementById('btnRainbow'); if(btnRainbow) btnRainbow.onclick=()=>{ if(G.rainbows<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='rainbow' ? null : 'rainbow'; syncUI(); };
+  const btnMute=document.getElementById('btnMute'); if(btnMute) btnMute.onclick=()=>{ SAVE.soundOn = !soundOn(); try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} syncMuteBtn(); if(soundOn()) SFX.click(); };
+  
   if(cv) { cv.addEventListener('pointerdown',e=>{G.dragging=true;aimAt(...localPt(e));}); cv.addEventListener('pointermove',e=>{if(G.dragging)aimAt(...localPt(e));}); cv.addEventListener('pointerup',()=>{ if(!G.dragging)return; G.dragging=false; if(G.aim!=null)shoot(G.aim); G.aim=null; }); cv.addEventListener('pointercancel',()=>{G.dragging=false;G.aim=null;}); }
 });
 
@@ -366,7 +415,12 @@ function syncUI(){
   if(bRain){ bRain.disabled=G.rainbows<=0; bRain.classList.toggle('active', G.activeItem==='rainbow'); }
 }
 
-const veil=document.getElementById('veil'),card=document.getElementById('card'); function show(html){if(card)card.innerHTML=html;if(veil)veil.classList.add('on');} function hide(){if(veil)veil.classList.remove('on');}
+/* ---------- 팝업창 및 모달 ---------- */
+// 변수 이름 겹치지 않게 조심!!
+const veil=document.getElementById('veil'), card=document.getElementById('card'); 
+function show(html){if(card)card.innerHTML=html;if(veil)veil.classList.add('on');} 
+function hide(){if(veil)veil.classList.remove('on');}
+
 const SHOP_ITEMS=[ {id:'hint3', icon:'💡', label:'힌트 +3', desc:'막힐 때 자리를 알려줘요', price:30, apply:()=>{G.hints+=3;}}, {id:'swap3', icon:'🔄', label:'교체 +3', desc:'글자를 다른 글자로 바꿔요', price:20, apply:()=>{G.swaps+=3;}}, {id:'bomb2', icon:'💣', label:'폭탄 +2', desc:'주변까지 한번에 터뜨려요', price:50, apply:()=>{G.bombs+=2;}}, {id:'rainbow2',icon:'🌈', label:'무지개 +2', desc:'가장 좋은 글자로 자동 발사', price:60, apply:()=>{G.rainbows+=2;}}, {id:'revive1', icon:'❤️', label:'부활권 +1', desc:'게임오버 시 이어서 플레이', price:80, apply:()=>{SAVE.revives=(SAVE.revives||0)+1;}} ];
 function openShop(){ show(shopHTML()); wireShop(); }
 function shopHTML(){
@@ -400,6 +454,7 @@ function intro(){
   const mTheme=document.getElementById('mTheme'); if(mTheme) mTheme.onclick=()=>{ SFX.click(); G.mode='theme'; hide(); openMap(); };
 }
 
+/* ---------- 지도 및 저장 시스템 ---------- */
 let _mapLivesTimer=null;
 function renderMapLives(){ const el=document.getElementById('mapLives'); if(!el)return; const s=computeLives(); if(s.count>=MAX_LIVES){ el.innerHTML=`❤️ ${s.count}/${MAX_LIVES}`; return; } const sec=Math.ceil(secToNextLife()); el.innerHTML=`❤️ ${s.count}/${MAX_LIVES} <small>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</small>`; }
 const ZONES=[ {key:'forest', img:'assets/map_zone_forest.webp'} ]; function zoneIdx(lv){ return Math.min(4, Math.floor((lv-1)/100)); }
@@ -431,24 +486,27 @@ function computeLives(){ let s=SAVE.lives; if(!s){ s=SAVE.lives={count:MAX_LIVES
 function secToNextLife(){ const s=computeLives(); return s.count>=MAX_LIVES ? 0 : Math.max(0, LIFE_REGEN_MS - (Date.now()-s.lastUpdate)) / 1000; }
 function spendLife(){ const s=computeLives(); if(s.count<=0){ const sec=Math.ceil(secToNextLife()); show(`<h2>하트가 없어요 ❤️</h2><p>다음 하트까지 <b>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</b></p><p style="font-size:13px;opacity:.75;margin-top:6px">1분마다 하트가 하나씩 채워져요 (최대 ${MAX_LIVES}개)</p><button class="btn" id="livesOk">확인</button>`); document.getElementById('livesOk').onclick=()=>{ SFX.click(); hide(); }; return false; } s.count--; saveGame(true); return true; }
 let _saveTimer=null; function saveGame(immediate){ const write=()=>{ try{ const slot=SAVE[G.mode]||(SAVE[G.mode]={stage:1,score:0,bestScore:0,bestStage:1}); slot.stage=G.stage; slot.score=G.score; slot.bestScore=Math.max(slot.bestScore||0, G.score); slot.bestStage=Math.max(slot.bestStage||1, G.stage); SAVE.lastMode=G.mode; localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }; if(immediate){ clearTimeout(_saveTimer); write(); } else{ clearTimeout(_saveTimer); _saveTimer=setTimeout(write,500); } }
-
 function applyDebugZones(){ const ls=SAVE.theme.levelStars||(SAVE.theme.levelStars={}); for(let i=1;i<=Math.max(1, MAX_STAGE-1);i++){ if(ls[i]==null) ls[i]=3; } }
-function boot(){ syncMuteBtn(); resize(); try{ if(new URLSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} G.grid=[]; G.targets=[]; G.cur=null; G.queue=[]; G.locked=true; intro(); requestAnimationFrame(tick); loadAssets().then(()=>{ BOARDLAYER=null; }); }
-function markFontsReady(){ FONTS_READY=true; SPR.clear(); BOARDLAYER=null; }
-if(document.fonts&&document.fonts.ready){ boot(); Promise.all([document.fonts.load("800 20px 'Pretendard'"),document.fonts.load("700 20px 'Pretendard'")]).then(()=>document.fonts.ready).then(markFontsReady).catch(()=>{ setTimeout(markFontsReady,800); }); setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000); } else { window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); }
 
-/* 누락되었던 음소거 버튼 기능 복구 */
-function syncMuteBtn(){ 
-  const b=document.getElementById('btnMute'); 
-  if(b) b.textContent = soundOn() ? '🔊' : '🔇'; 
+/* ---------- 부트스트랩 (게임 시작) ---------- */
+function boot(){ 
+  syncMuteBtn(); 
+  resize(); 
+  try{ if(new URLSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} 
+  G.grid=[]; G.targets=[]; G.cur=null; G.queue=[]; G.locked=true; 
+  intro(); 
+  requestAnimationFrame(tick); 
+  loadAssets().then(()=>{ BOARDLAYER=null; }); 
 }
 
-window.addEventListener('load', () => {
-  const btnMute=document.getElementById('btnMute');
-  if(btnMute) btnMute.onclick=()=>{
-    SAVE.soundOn = !soundOn();
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
-    syncMuteBtn();
-    if(soundOn()) SFX.click();
-  };
-});
+function markFontsReady(){ FONTS_READY=true; SPR.clear(); BOARDLAYER=null; }
+
+if(document.fonts&&document.fonts.ready){ 
+  boot(); 
+  Promise.all([document.fonts.load("800 20px 'Pretendard'"),document.fonts.load("700 20px 'Pretendard'")])
+  .then(()=>document.fonts.ready).then(markFontsReady)
+  .catch(()=>{ setTimeout(markFontsReady,800); }); 
+  setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000); 
+} else { 
+  window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); 
+}
