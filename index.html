@@ -14,28 +14,41 @@
 <body>
 
 <div id="app">
-  
-  <!-- 1단: 상단 메뉴 부분 -->
+  <!-- 게임 화면 (전체 화면 꽉 채움) -->
+  <div id="stage">
+    <div id="scoreScroll"><b id="uiScoreBig">0</b></div>
+    <canvas id="cv"></canvas>
+  </div>
+
+  <!-- 상단 메뉴 (화면 위에 떠 있음) -->
   <div id="topTier">
     <header>
-      <div style="display:flex;align-items:center;gap:6px">
-        <button class="np" id="btnMenu" style="padding:7px 12px">❚❚</button>
-        <button class="np" id="btnMute" style="padding:7px 12px">🔊</button>
-        <button class="np" id="btnShop" style="padding:7px 12px">🛒</button>
+      <div style="display:flex;align-items:center;gap:8px;pointer-events:auto;">
+        <button class="np" id="btnMenu">❚❚</button>
+        <button class="np" id="btnMute">🔊</button>
+        <button class="np" id="btnShop">🛒</button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;">
+      <div style="display:flex;align-items:center;gap:6px;pointer-events:auto;">
         <span class="hl">❤️<b id="uiLives">6</b></span>
         <span class="hl">S<b id="uiStage">1</b></span>
         <span class="hl">💰<b id="uiCoins">0</b></span>
       </div>
     </header>
-    <div id="goalBar">
-      <span class="glabel" id="uiGoal">과일</span>
-      <div class="gtrack"><i id="comboBar" style="width:0%"></i></div>
-      <span class="gcombo">x<b id="uiCombo">1</b></span>
-    </div>
-    <div id="targetBar"></div>
+    <!-- 목표 단어 표시줄 -->
+    <div id="targetBar" style="pointer-events:auto;"></div>
   </div>
+
+  <!-- 하단 아이템 (화면 아래에 떠 있음) -->
+  <div id="bottomTier">
+    <button class="fab" id="btnHint">💡 <b id="uiHint">3</b></button>
+    <button class="fab" id="btnSwap">🔄 <b id="uiSwap">3</b></button>
+    <button class="fab" id="btnBomb">💣 <b id="uiBomb">2</b></button>
+    <button class="fab" id="btnRainbow">🌈 <b id="uiRainbow">2</b></button>
+  </div>
+
+  <div class="veil" id="veil"><div class="card" id="card"></div></div>
+  <div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
+</div>
 
   <!-- 2단: 게임 화면 부분 (배경 그림, 점수판, 버블 대포) -->
   <div id="stage">

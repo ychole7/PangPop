@@ -78,25 +78,23 @@ const BG_FRAME={left:0.028, right:0.972, top:0.148};
 
 /* ✨ 3단 분리 완벽 대응 리사이즈 함수 */
 function resize(){
-  const stageEl=document.getElementById('stage');
-  if(!stageEl) return;
+  const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
+  if(!stageEl || !appEl) return;
   const box=stageEl.getBoundingClientRect();
+  const appBox=appEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
-  W=Math.max(1,box.width); H=Math.max(1,box.height);
+  W=Math.max(1,appBox.width); H=Math.max(1,appBox.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  // 2단 스테이지 영역 안에서의 완벽한 배경 스케일 계산
-  const scale=Math.min(box.width/BG_IMG_W, box.height/BG_IMG_H);
+  const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
   const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
-  const imgOffX=(box.width-imgW)/2;
-  const imgOffY=(box.height-imgH)/2;
+  const imgOffX=(appBox.width-imgW)/2;
+  const imgOffY=(appBox.height-imgH)/2;
 
-  // 캔버스 좌표계
   const bgX=fx=>imgOffX+fx*imgW;
   const bgY=fy=>imgOffY+fy*imgH;
 
-  // 점수판 위치를 두루마리 그림에 찰떡같이 고정
   const scrollEl=document.getElementById('scoreScroll');
   if(scrollEl){
     const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW;
@@ -114,7 +112,6 @@ function resize(){
   ROWH=R*1.72;
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
 
-  // 대포 위치 돌판에 고정
   G.shooterY=bgY(0.815);
 
   BH=G.shooterY-BY;
@@ -898,11 +895,12 @@ function renderTargetBar(){
   if(!bar)return;
   if(G.mode==='theme'&&G.targets.length){
     bar.style.display='flex';
-    bar.innerHTML=G.targets.map(w=>`<span class="tchip${G.done[w]?' done':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('');
+    const chips = G.targets.map(w=>`<span class="tchip${G.done[w]?' done':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('');
+    // 텍스트 추가
+    bar.innerHTML=`<span style="font-size:14px;color:#f5e3ae;margin-right:4px;text-shadow:0 1px 3px rgba(0,0,0,0.8);font-weight:800;">🎯 목표:</span>` + chips;
   }else if(G.mode==='free'){
     bar.style.display='flex';
-    const pct=Math.min(100,Math.round(G.wordsCompleted/G.freeGoal*100));
-    bar.innerHTML=`<span class="tchip${G.wordsCompleted>=G.freeGoal?' done':''}">목표: 단어 ${G.wordsCompleted}/${G.freeGoal}개 완성</span>`;
+    bar.innerHTML=`<span style="font-size:14px;color:#f5e3ae;margin-right:4px;text-shadow:0 1px 3px rgba(0,0,0,0.8);font-weight:800;">🎯 목표:</span> <span class="tchip${G.wordsCompleted>=G.freeGoal?' done':''}">단어 ${G.wordsCompleted}/${G.freeGoal}개</span>`;
   }else{
     bar.style.display='none'; bar.innerHTML='';
   }
