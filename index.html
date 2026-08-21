@@ -1598,6 +1598,9 @@ const PATH_IMG_ASPECT={ forest: 6398/900 };  // height/width
 // ※ LEAF_POINTS(나뭇잎 실좌표)는 맵 전용 이미지를 새로 받으면 다시 사용할 예정 — 지금은 안정성 위해 자동배치로 복귀
 
 function openMap(){
+  // display:none 상태에서 clientWidth를 재면 항상 0이 나와서 390(기본값)으로 대체되던 버그.
+  // 지도 veil을 먼저 켜고(레이아웃 확정) 그 다음에 실제 너비를 측정한다.
+  document.getElementById('mapVeil').classList.add('on');
   const stars=SAVE.theme.levelStars||{};
   let maxUnlocked=1;
   for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; }
@@ -1695,7 +1698,6 @@ function openMap(){
   }
   html += zonesHtml + svg + nodesHtml + '</div>';
   scrollEl.innerHTML=html;
-  document.getElementById('mapVeil').classList.add('on');
   renderMapLives();
   clearInterval(_mapLivesTimer);
   _mapLivesTimer=setInterval(renderMapLives,1000);
