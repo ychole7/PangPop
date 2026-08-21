@@ -74,7 +74,7 @@ const COLS=7;
 let BX=0,BY=0,BW=0,BH=0;
 const FRAME=9;
 const BG_IMG_W=900, BG_IMG_H=1572;
-const BG_FRAME={left:0.028, right:0.972, top:0.148};
+const BG_FRAME={left:0.028, right:0.972, top:0.24};
 function resize(){
   const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
   const box=stageEl.getBoundingClientRect();
@@ -104,7 +104,7 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
   ROWH=R*1.72;
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=H*0.655;
+  G.shooterY=H*0.75;
   BH=G.shooterY-BY;
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
