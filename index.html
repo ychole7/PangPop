@@ -14,40 +14,45 @@
 <body>
 
 <div id="app">
-<div id="scoreScroll"><b id="uiScoreBig">0</b></div>
-<header>
-  <div style="display:flex;align-items:center;gap:6px">
-    <button class="np" id="btnMenu" style="padding:7px 12px">❚❚</button>
-    <button class="np" id="btnMute" style="padding:7px 12px">🔊</button>
-    <button class="np" id="btnShop" style="padding:7px 12px">🛒</button>
-  </div>
-  <!-- 👇 우측 정보창 캡슐화 -->
-  <div style="display:flex;align-items:center;gap:6px;">
-    <span class="hl">❤️<b id="uiLives">6</b></span>
-    <span class="hl">S<b id="uiStage">1</b></span>
-    <span class="hl">💰<b id="uiCoins">0</b></span>
-  </div>
-</header>
-<div id="goalBar">
-  <span class="glabel" id="uiGoal">과일</span>
-  <div class="gtrack"><i id="comboBar" style="width:0%"></i></div>
-  <span class="gcombo">x<b id="uiCombo">1</b></span>
-</div>
-<div id="targetBar"></div>
-
-<div id="stage">
-  <canvas id="cv"></canvas>
   
-  <!-- 👇 하단 중앙 아이템 바 (4개 가로 나열) -->
-  <div id="bottomItemBar">
+  <!-- 1단: 상단 메뉴 부분 -->
+  <div id="topTier">
+    <header>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="np" id="btnMenu" style="padding:7px 12px">❚❚</button>
+        <button class="np" id="btnMute" style="padding:7px 12px">🔊</button>
+        <button class="np" id="btnShop" style="padding:7px 12px">🛒</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="hl">❤️<b id="uiLives">6</b></span>
+        <span class="hl">S<b id="uiStage">1</b></span>
+        <span class="hl">💰<b id="uiCoins">0</b></span>
+      </div>
+    </header>
+    <div id="goalBar">
+      <span class="glabel" id="uiGoal">과일</span>
+      <div class="gtrack"><i id="comboBar" style="width:0%"></i></div>
+      <span class="gcombo">x<b id="uiCombo">1</b></span>
+    </div>
+    <div id="targetBar"></div>
+  </div>
+
+  <!-- 2단: 게임 화면 부분 (배경 그림, 점수판, 버블 대포) -->
+  <div id="stage">
+    <div id="scoreScroll"><b id="uiScoreBig">0</b></div>
+    <canvas id="cv"></canvas>
+  </div>
+
+  <!-- 3단: 하단 아이템 배치 -->
+  <div id="bottomTier">
     <button class="fab" id="btnHint">💡 <b id="uiHint">3</b></button>
     <button class="fab" id="btnSwap">🔄 <b id="uiSwap">3</b></button>
     <button class="fab" id="btnBomb">💣 <b id="uiBomb">2</b></button>
     <button class="fab" id="btnRainbow">🌈 <b id="uiRainbow">2</b></button>
   </div>
-</div>
-<div class="veil" id="veil"><div class="card" id="card"></div></div>
-<div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
+
+  <div class="veil" id="veil"><div class="card" id="card"></div></div>
+  <div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
 </div>
 
 <!-- 👇 배경음악 오디오 (무료 퍼즐 게임 BGM 링크를 임시로 연결해두었습니다) -->

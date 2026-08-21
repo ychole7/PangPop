@@ -76,31 +76,48 @@ const FRAME=9;
 const BG_IMG_W=900, BG_IMG_H=1572;
 const BG_FRAME={left:0.028, right:0.972, top:0.148};
 function resize(){
-  const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
+  const stageEl=document.getElementById('stage');
   const box=stageEl.getBoundingClientRect();
-  const appBox=appEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
   W=Math.max(1,box.width); H=Math.max(1,box.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  
-  const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
+
+  // 2단 스테이지 영역 안에서의 완벽한 배경 스케일 계산
+  const scale=Math.min(box.width/BG_IMG_W, box.height/BG_IMG_H);
   const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
-  const imgOffX=(appBox.width-imgW)/2;
-  const stageOffX=box.left-appBox.left, stageOffY=box.top-appBox.top;
-  
-  // 배경 이미지 좌표 계산 (무조건 top 고정으로 여백 방지)
-  const bgX=fx=>imgOffX+fx*imgW-stageOffX;
-  const bgY=fy=>fy*imgH-stageOffY;
-  
+  const imgOffX=(box.width-imgW)/2;
+  const imgOffY=(box.height-imgH)/2;
+
+  // 캔버스 좌표계
+  const bgX=fx=>imgOffX+fx*imgW;
+  const bgY=fy=>imgOffY+fy*imgH;
+
+  // 점수판 위치를 두루마리 그림에 찰떡같이 고정
   const scrollEl=document.getElementById('scoreScroll');
   if(scrollEl){
     const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW;
     const sT=0.0350*imgH, sB=0.1240*imgH;
-    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
+    scrollEl.style.left=sL+'px'; scrollEl.style.top=(imgOffY+sT)+'px';
     scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
     scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
   }
+
+  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right);
+  BW=bxRight-BX;
+  R=BW/(COLS*2);
+  const Rmax=Math.min(H*0.052, 46);
+  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
+  ROWH=R*1.72;
+  BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
+
+  // 대포 위치 돌판에 고정
+  G.shooterY=bgY(0.815);
+
+  BH=G.shooterY-BY;
+  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
+  BOARDLAYER=null; SPR.clear(); G.trajA=null;
+}
   
   BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right);
   BW=bxRight-BX;
