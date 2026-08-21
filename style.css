@@ -17,10 +17,16 @@ body{
 }
 @supports not (height:100dvh){ #app{height:100vh} }
 
-/* 게임 스테이지 (화면 100% 채움, 절대 안 찌그러짐) */
+/* 게임 스테이지 (모든 기기에서 비율 100% 완벽 고정) */
 #stage {
-  position: absolute; inset: 0; z-index: 1; 
-  background: url('assets/bg_hanok.jpg') center center / contain no-repeat;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 900 / 1572;
+  background: url('assets/bg_hanok.jpg') center / 100% 100% no-repeat;
+  z-index: 1;
 }
 
 /* UI 레이어 (화면 겉에 떠 있는 유리판) */

@@ -32,26 +32,36 @@ const COLS=7, FRAME=9, BG_IMG_W=900, BG_IMG_H=1572, BG_FRAME={left:0.028, right:
 
 function resize(){
   if(!cv) return;
-  const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
-  if(!stageEl || !appEl) return;
-  const appBox=appEl.getBoundingClientRect();
+  const stageEl=document.getElementById('stage');
+  if(!stageEl) return;
+  
+  // CSS가 완벽하게 비율을 맞춘 #stage의 실제 크기를 그대로 가져옵니다.
+  const box=stageEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
-  W=Math.max(1,appBox.width); H=Math.max(1,appBox.height);
+  W=Math.max(1,box.width); H=Math.max(1,box.height);
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
-  const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
-  const imgOffX=(appBox.width-imgW)/2, imgOffY=(appBox.height-imgH)/2;
-  const bgX=fx=>imgOffX+fx*imgW, bgY=fy=>imgOffY+fy*imgH;
+  // 복잡한 여백(offset) 계산 삭제! 
+  const bgX=fx=>fx*W;
+  const bgY=fy=>fy*H;
 
   const scrollEl=document.getElementById('scoreScroll');
   if(scrollEl){
-    const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW, sT=0.0350*imgH, sB=0.1240*imgH;
-    scrollEl.style.left=sL+'px'; scrollEl.style.top=(imgOffY+sT)+'px';
+    const sL=0.3111*W, sR=0.7111*W, sT=0.0350*H, sB=0.1240*H;
+    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
     scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
     scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
   }
+
+  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right); BW=bxRight-BX; R=BW/(COLS*2);
+  const Rmax=Math.min(H*0.052, 46);
+  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
+  ROWH=R*1.72; BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
+  G.shooterY=bgY(0.815); BH=G.shooterY-BY;
+  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
+  BOARDLAYER=null; SPR.clear(); G.trajA=null;
+}
 
   BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right); BW=bxRight-BX; R=BW/(COLS*2);
   const Rmax=Math.min(H*0.052, 46);
