@@ -541,6 +541,6 @@ window.addEventListener('load', () => {
 
 /* ---------- 누락된 유틸리티 함수 복구 ---------- */
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
-let _fillCount={}; function resetFillCount(){ _fillCount={}; }
+function resetFillCount(){ _fillCount={}; }
 function fillSyllable(c,r){ const avoid=new Set(); if(c>0 && G.grid[r] && G.grid[r][c-1]) avoid.add(G.grid[r][c-1].s); if(r>0){ for(const [nc,nr] of nbrs(c,r)){ if(nr<r && G.grid[nr] && G.grid[nr][nc]) avoid.add(G.grid[nr][nc].s); } } let candidates=G.pool.filter(s=>!avoid.has(s)); if(!candidates.length) candidates=[...G.pool]; let minUse=Infinity; for(const s of candidates) minUse=Math.min(minUse,_fillCount[s]||0); const leastUsed=candidates.filter(s=>(_fillCount[s]||0)<=minUse+1); const chosen=pick(leastUsed.length?leastUsed:candidates); _fillCount[chosen]=(_fillCount[chosen]||0)+1; return chosen; }
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
