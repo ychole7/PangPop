@@ -436,3 +436,19 @@ function applyDebugZones(){ const ls=SAVE.theme.levelStars||(SAVE.theme.levelSta
 function boot(){ syncMuteBtn(); resize(); try{ if(new URLSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} G.grid=[]; G.targets=[]; G.cur=null; G.queue=[]; G.locked=true; intro(); requestAnimationFrame(tick); loadAssets().then(()=>{ BOARDLAYER=null; }); }
 function markFontsReady(){ FONTS_READY=true; SPR.clear(); BOARDLAYER=null; }
 if(document.fonts&&document.fonts.ready){ boot(); Promise.all([document.fonts.load("800 20px 'Pretendard'"),document.fonts.load("700 20px 'Pretendard'")]).then(()=>document.fonts.ready).then(markFontsReady).catch(()=>{ setTimeout(markFontsReady,800); }); setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000); } else { window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); }
+
+/* 누락되었던 음소거 버튼 기능 복구 */
+function syncMuteBtn(){ 
+  const b=document.getElementById('btnMute'); 
+  if(b) b.textContent = soundOn() ? '🔊' : '🔇'; 
+}
+
+window.addEventListener('load', () => {
+  const btnMute=document.getElementById('btnMute');
+  if(btnMute) btnMute.onclick=()=>{
+    SAVE.soundOn = !soundOn();
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
+    syncMuteBtn();
+    if(soundOn()) SFX.click();
+  };
+});
