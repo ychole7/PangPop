@@ -1,7 +1,3 @@
-/* ══════════════════════════════════════════
-   낱글자 팡팡! — 한글 단어 버블슈터 (오류 완벽 해결본)
-   ══════════════════════════════════════════ */
-
 const DICT_BY_CAT = {
   '과일': ['사과','포도','딸기','수박','참외','자두','바나나','오렌지','레몬','복숭아','체리','망고','멜론','키위','앵두','살구','자몽','석류','토마토','대추','모과','매실','앵도','귤','감','배','밤','파인애플','블루베리','무화과','한라봉','청포도','머루','다래'],
   '동물': ['사자','호랑이','코끼리','토끼','다람쥐','거북이','고양이','강아지','원숭이','기린','하마','얼룩말','여우','늑대','사슴','너구리','개구리','병아리','오리','돼지','판다','펭귄','악어','고래','두더지','고슴도치','치타','표범','물개','바다표범','부엉이','까치','참새','비둘기','수달','청설모','두루미'],
@@ -24,25 +20,30 @@ function colByIdx(i){ return PALETTE[((i%NCOL)+NCOL)%NCOL]; }
 function colorOf(b){ if(b&&typeof b==='object'&&typeof b.col==='number') return colByIdx(b.col); const ch=(typeof b==='string')?b:(b&&b.s)||''; let h=0; for(let i=0;i<ch.length;i++) h=(h*31+ch.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; }
 function randCol(){ return Math.floor(Math.random()*NCOL); }
 
-/* ---------- 필수 변수 및 캔버스 설정 ---------- */
-const cv = document.getElementById('cv');
-let ctx = cv ? cv.getContext('2d') : null; // <--- let으로 변경!
+let cv, ctx;
 let W=0,H=0,R=0,ROWH=0,DPR=1, BX=0,BY=0,BW=0,BH=0;
-const COLS=7, FRAME=9, BG_IMG_W=900, BG_IMG_H=1572, BG_FRAME={left:0.028, right:0.972, top:0.148};
+const COLS=7, FRAME=9, BG_FRAME={left:0.028, right:0.972, top:0.148};
+
+function initCanvas() {
+  cv = document.getElementById('cv');
+  if(!cv) return false;
+  ctx = cv.getContext('2d');
+  return true;
+}
 
 function resize(){
-  if(!cv) return;
+  if(!cv && !initCanvas()) return;
   const stageEl=document.getElementById('stage');
   if(!stageEl) return;
   
-  // CSS가 완벽하게 비율을 맞춘 #stage의 실제 크기를 그대로 가져옵니다.
   const box=stageEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
-  W=Math.max(1,box.width); H=Math.max(1,box.height);
+  W=box.width; H=box.height;
+  if(W===0 || H===0) return;
+  
   cv.width=W*DPR; cv.height=H*DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  // 복잡한 여백(offset) 계산 삭제! 
   const bgX=fx=>fx*W;
   const bgY=fy=>fy*H;
 
@@ -63,19 +64,9 @@ function resize(){
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
 
-  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right); BW=bxRight-BX; R=BW/(COLS*2);
-  const Rmax=Math.min(H*0.052, 46);
-  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
-  ROWH=R*1.72; BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=bgY(0.815); BH=G.shooterY-BY;
-  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
-  BOARDLAYER=null; SPR.clear(); G.trajA=null;
-}
-
 let _rz; window.addEventListener('resize',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
 window.addEventListener('orientationchange',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
 
-/* ---------- 상태 및 파티클 ---------- */
 const G={ grid:[],parity:0,stage:1,score:0,combo:0,started:false,mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},cur:null,queue:[],fly:null,aim:null,dragging:false,toasts:[],waves:[],pops:[],shake:0,flash:0,shooterY:0,maxRows:10,dryShots:0,swaps:3,hints:3,hintCells:null,bombs:2,rainbows:2,activeItem:null,wordsCompleted:0,freeGoal:8,locked:true,shots:0,trajA:null,trajPts:[],banner:null };
 const PARTICLE_POOL=Array.from({length:100},()=>({active:false,x:0,y:0,vx:0,vy:0,life:0,col:'#000',r:0}));
 function getParticle(){ for(let p of PARTICLE_POOL) if(!p.active) return p; return null; }
@@ -84,7 +75,11 @@ function nbrs(c,r){const o=po(r); return [[c-1,r],[c+1,r],[c-1+o,r-1],[c+o,r-1],
 function at(c,r){ if(r<0||r>=G.grid.length||c<0||c>=cellsIn(r))return null; return G.grid[r][c]; }
 const AXES=[ {fwd:(c,r)=>[c+1,r],back:(c,r)=>[c-1,r]}, {fwd:(c,r)=>[c+po(r),r+1],back:(c,r)=>[c-1+po(r),r-1]}, {fwd:(c,r)=>[c-1+po(r),r+1],back:(c,r)=>[c+po(r),r-1]} ];
 
-/* ---------- 스테이지 빌드 ---------- */
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+let _fillCount={}; function resetFillCount(){ _fillCount={}; }
+function fillSyllable(c,r){ const avoid=new Set(); if(c>0 && G.grid[r] && G.grid[r][c-1]) avoid.add(G.grid[r][c-1].s); if(r>0){ for(const [nc,nr] of nbrs(c,r)){ if(nr<r && G.grid[nr] && G.grid[nr][nc]) avoid.add(G.grid[nr][nc].s); } } let candidates=G.pool.filter(s=>!avoid.has(s)); if(!candidates.length) candidates=[...G.pool]; let minUse=Infinity; for(const s of candidates) minUse=Math.min(minUse,_fillCount[s]||0); const leastUsed=candidates.filter(s=>(_fillCount[s]||0)<=minUse+1); const chosen=pick(leastUsed.length?leastUsed:candidates); _fillCount[chosen]=(_fillCount[chosen]||0)+1; return chosen; }
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
 function buildStage(){
   G.waves=[]; G.pops=[]; G.shake=0; G.flash=0; PARTICLE_POOL.forEach(p=>p.active=false);
   if(G.mode==='free'){ buildFreeStage(); return; }
@@ -99,7 +94,7 @@ function buildStage(){
   G.words=[...new Set([...G.targets,...main,...others])];
   const syl=new Set(); for(const w of G.words) for(const ch of w) syl.add(ch); G.pool=[...syl];
   const rows=Math.min(G.maxRows, Math.max(2, 2+Math.floor((G.stage-1)/2)));
-  G.parity=0; G.grid=[]; _fillCount={};
+  G.parity=0; G.grid=[]; resetFillCount();
   for(let r=0;r<rows;r++){ const row=[]; G.grid.push(row); for(let c=0;c<cellsIn(r);c++) row.push({s:fillSyllable(c,r),col:randCol()}); }
   const seeds=shuffle(G.targets.filter(w=>w.length<=3));
   for(let i=0;i<Math.min(2,seeds.length);i++) plantWord(seeds[i],rows);
@@ -146,7 +141,6 @@ function plantWord(w,rows){
   }
 }
 
-/* ---------- 탐색 및 판정 ---------- */
 function lineOf(c0,r0,ax){
   const cells=[[c0,r0]]; let c=c0,r=r0;
   for(;;){[c,r]=ax.back(c,r); if(!at(c,r))break; cells.unshift([c,r]);}
@@ -193,7 +187,6 @@ function newCur(){
   _recentSyl.push(chosen); if(_recentSyl.length>3) _recentSyl.shift(); return {s:chosen, col:randCol()};
 }
 
-/* ---------- 버블 쏘기 및 충돌 처리 ---------- */
 function shoot(angle){
   if(G.fly||G.locked)return; const sp=R*0.62, item=G.activeItem;
   if(item==='bomb') G.bombs--; if(item==='rainbow') G.rainbows--; G.activeItem=null;
@@ -286,7 +279,6 @@ function resolve(c,r){
   const left=5-G.dryShots; if(left>0 && left<=2) addPop(cx(c,r), cy(r)+R*0.7, left+'번 더 실패 시 새 줄', '#ffb15c');
   if(G.dryShots>=5){G.dryShots=0; SFX.rowAdd(); G.parity^=1; const row=[]; for(let cc=0;cc<cellsIn(0);cc++){ const avoid=cc>0?row[cc-1].s:null; let cand=G.pool.filter(x=>x!==avoid); if(!cand.length)cand=[...G.pool]; let mn=Infinity; for(const x of cand) mn=Math.min(mn,_fillCount[x]||0); const least=cand.filter(x=>(_fillCount[x]||0)<=mn+1); const ch=pick(least.length?least:cand); _fillCount[ch]=(_fillCount[ch]||0)+1; row.push({s:ch,col:randCol()}); } G.grid.unshift(row); toast('새 줄이 내려왔어요!');} checkState(); syncUI();
 }
-let _fillCount={};
 function dropFloaters(){
   const keep=new Set(),stack=[]; if(G.grid[0])for(let c=0;c<cellsIn(0);c++) if(G.grid[0][c]){keep.add('0,'+c);stack.push([c,0]);}
   while(stack.length){ const [c,r]=stack.pop(); for(const [nc,nr] of nbrs(c,r)){ if(!at(nc,nr))continue; const k=nr+','+nc; if(keep.has(k))continue; keep.add(k); stack.push([nc,nr]); } }
@@ -379,7 +371,7 @@ function tick(now){
 function aimAt(px,py){ const dx=px-W/2,dy=py-G.shooterY; let a=Math.atan2(dy,dx); const lim=.22; if(a>-lim)a=-lim; if(a<-Math.PI+lim)a=-Math.PI+lim; G.aim=a; }
 function localPt(e){ if(!cv)return [0,0]; const rect=cv.getBoundingClientRect(); return [e.clientX-rect.left,e.clientY-rect.top]; }
 
-/* ---------- UI 동기화 및 버튼 연결 ---------- */
+/* ---------- UI 이벤트 연결 ---------- */
 function syncMuteBtn(){ const b=document.getElementById('btnMute'); if(b) b.textContent = soundOn() ? '🔊' : '🔇'; }
 
 window.addEventListener('load', () => {
@@ -425,12 +417,8 @@ function syncUI(){
   if(bRain){ bRain.disabled=G.rainbows<=0; bRain.classList.toggle('active', G.activeItem==='rainbow'); }
 }
 
-/* ---------- 팝업창 및 모달 ---------- */
-// 변수 이름 겹치지 않게 조심!!
-const veil=document.getElementById('veil'), card=document.getElementById('card'); 
-function show(html){if(card)card.innerHTML=html;if(veil)veil.classList.add('on');} 
-function hide(){if(veil)veil.classList.remove('on');}
-
+/* ---------- 팝업창 모달 ---------- */
+const veil=document.getElementById('veil'),card=document.getElementById('card'); function show(html){if(card)card.innerHTML=html;if(veil)veil.classList.add('on');} function hide(){if(veil)veil.classList.remove('on');}
 const SHOP_ITEMS=[ {id:'hint3', icon:'💡', label:'힌트 +3', desc:'막힐 때 자리를 알려줘요', price:30, apply:()=>{G.hints+=3;}}, {id:'swap3', icon:'🔄', label:'교체 +3', desc:'글자를 다른 글자로 바꿔요', price:20, apply:()=>{G.swaps+=3;}}, {id:'bomb2', icon:'💣', label:'폭탄 +2', desc:'주변까지 한번에 터뜨려요', price:50, apply:()=>{G.bombs+=2;}}, {id:'rainbow2',icon:'🌈', label:'무지개 +2', desc:'가장 좋은 글자로 자동 발사', price:60, apply:()=>{G.rainbows+=2;}}, {id:'revive1', icon:'❤️', label:'부활권 +1', desc:'게임오버 시 이어서 플레이', price:80, apply:()=>{SAVE.revives=(SAVE.revives||0)+1;}} ];
 function openShop(){ show(shopHTML()); wireShop(); }
 function shopHTML(){
@@ -464,7 +452,7 @@ function intro(){
   const mTheme=document.getElementById('mTheme'); if(mTheme) mTheme.onclick=()=>{ SFX.click(); G.mode='theme'; hide(); openMap(); };
 }
 
-/* ---------- 지도 및 저장 시스템 ---------- */
+/* ---------- 100스테이지 지도 시스템 ---------- */
 let _mapLivesTimer=null;
 function renderMapLives(){ const el=document.getElementById('mapLives'); if(!el)return; const s=computeLives(); if(s.count>=MAX_LIVES){ el.innerHTML=`❤️ ${s.count}/${MAX_LIVES}`; return; } const sec=Math.ceil(secToNextLife()); el.innerHTML=`❤️ ${s.count}/${MAX_LIVES} <small>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</small>`; }
 const ZONES=[ {key:'forest', img:'assets/map_zone_forest.webp'} ]; function zoneIdx(lv){ return Math.min(4, Math.floor((lv-1)/100)); }
@@ -474,37 +462,25 @@ const FOREST_SUBIMAGES=[ {file:'assets/bg_ch4.webp?v=2', topFrac:0, hFrac:0.2499
 
 function openMap(_isRetry){
   const mv=document.getElementById('mapVeil'); if(mv)mv.classList.add('on'); 
-  const stars=SAVE.theme.levelStars||{}; 
-  let maxUnlocked=1; for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; } 
-  maxUnlocked=Math.min(maxUnlocked, MAX_STAGE); 
+  const stars=SAVE.theme.levelStars||{}; let maxUnlocked=1; for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; } maxUnlocked=Math.min(maxUnlocked, MAX_STAGE); 
   const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null; 
-  
-  // ✨ 숨김 제한 해제: 100 스테이지까지 전부 그리기!
   const TOTAL = MAX_STAGE; 
   
-  // 날아갔던 변수들 복구!
-  const scrollEl=document.getElementById('mapScroll'); 
-  const containerW=scrollEl.clientWidth||390; 
-  const curZone=zoneIdx(TOTAL);
-  
+  const scrollEl=document.getElementById('mapScroll'); const containerW=scrollEl.clientWidth||390; const curZone=zoneIdx(TOTAL);
   function xPct(lv){ return 50+Math.sin(lv*0.9)*26+((Math.sin(lv*12.9898)*43758.5453)%1 - 0.5)*10; }
   const zoneH=[]; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; zoneH[z] = PATH_POINTS[key] ? containerW*PATH_IMG_ASPECT[key] : 100*108; } const H = zoneH.reduce((a,b)=>a+b,0) + 120; const zoneTop=[], zoneBot=[]; { let bot=H-60; for(let z=0; z<=curZone; z++){ zoneBot[z]=bot; zoneTop[z]=bot-zoneH[z]; bot=zoneTop[z]; } }
   function nodePos(lv){ const z=zoneIdx(lv); const key=ZONES[z].key; const localLv=lv-z*100; if(PATH_POINTS[key]){ const raw=PATH_POINTS[key][localLv-1] || [50,50]; return { x: raw[0], y: zoneTop[z] + (raw[1]/100)*zoneH[z] }; }else{ return { x: xPct(lv), y: zoneBot[z] - (localLv-0.5)/100*zoneH[z] }; } }
   
   let zonesHtml=''; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; if(key==='forest'){ FOREST_SUBIMAGES.forEach(sub=>{ zonesHtml += `<img src="${sub.file}" style="position:absolute;left:0;top:${zoneTop[z] + sub.topFrac*zoneH[z]}px;width:100%;height:${sub.hFrac*zoneH[z]}px;z-index:0;pointer-events:none">`; }); }else if(PATH_POINTS[key]){ zonesHtml += `<img src="${ZONES[z].img}" style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;z-index:0;pointer-events:none">`; }else{ zonesHtml += `<div style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;overflow:hidden;background-image:url('${ZONES[z].img}');background-repeat:repeat-y;background-size:100% auto;background-position:top center"></div>`; } }
-  
   let nodesHtml='', pathPts=[]; for(let lv=1; lv<=TOTAL; lv++){ const done = stars[lv]!=null, isNext = !done && lv===maxUnlocked, locked = !done && !isNext, isMilestone = lv%MILESTONE_EVERY===0, isFinal = lv===MAX_STAGE, cls = done?'done':(isNext?'next':'locked'), extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':''), p=nodePos(lv); pathPts.push([p.x,p.y]); const starHtml = done ? [[-10,-1],[0,-5],[10,-1]].map((sp,i)=>`<span class="mstar" style="left:calc(50% + ${sp[0]}px);top:${sp[1]}px">${i<stars[lv]?'★':'<span style=\'opacity:.35\'>★</span>'}</span>`).join('') : ''; const icon = isFinal ? '👑' : (isMilestone ? '🎁' : lv); nodesHtml += `<div class="mnode ${cls}${extraCls}" data-lv="${lv}" style="left:${p.x}%;top:${p.y}px">${done?'<span class="mdone-halo"></span>':''}${locked?'<span class="mlock">🔒</span>':icon}${starHtml}</div>`; }
-  
   let pathD=''; pathPts.forEach((p,i)=>{ if(i===0) pathD+=`M${p[0]},${p[1]}`; else pathD+=` C${pathPts[i-1][0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${p[1]}`; });
   
   scrollEl.innerHTML=`<div id="mapInner" style="height:${H}px">${allCleared?`<div style="position:absolute;left:50%;top:20px;transform:translateX(-50%);color:#f5e3ae;text-align:center;font-size:14px;padding:6px 16px;white-space:nowrap;z-index:3">🏆 100 스테이지 완주! 대단해요</div>`:''}${zonesHtml}<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:${H}px;z-index:1;pointer-events:none"><path d="${pathD}" fill="none" stroke="#fff3c4" stroke-width="0.7" stroke-linecap="round" stroke-dasharray="0.5 1.2" opacity="0.45" vector-effect="non-scaling-stroke"/></svg>${nodesHtml}</div>`;
   
   if(!_isRetry){ requestAnimationFrame(()=>{ if(Math.abs(scrollEl.clientWidth - containerW) > 2){ openMap(true); return; } }); } renderMapLives(); clearInterval(_mapLivesTimer); _mapLivesTimer=setInterval(renderMapLives,1000);
-  
   const tabsEl=document.getElementById('seasonTabs'); if(tabsEl){ if(ZONES.length <= 1){ tabsEl.innerHTML=''; } else { let tabsHtml=''; for(let z=0; z<ZONES.length; z++) tabsHtml += `<div class="stab ${z<=curZone?'':'locked'}" data-z="${z}">S${z+1}</div>`; tabsEl.innerHTML=tabsHtml; tabsEl.querySelectorAll('.stab').forEach(t=>{ t.onclick=()=>{ const z=+t.dataset.z; if(z>curZone) return; SFX.click(); scrollEl.scrollTo({top: Math.max(0, (zoneTop[z]+zoneBot[z])/2 - scrollEl.clientHeight/2), behavior:'smooth'}); }; }); } }
   
   requestAnimationFrame(()=>{ const nextEl=scrollEl.querySelector('.mnode.next')||scrollEl.querySelector('.mnode.done:last-of-type'); if(nextEl) nextEl.scrollIntoView({block:'center'}); });
-  
   scrollEl.querySelectorAll('.mnode').forEach(el=>{ el.onclick=()=>{ const lv=+el.dataset.lv; if(el.classList.contains('locked') || !spendLife()) return; SFX.click(); document.getElementById('mapVeil').classList.remove('on'); clearInterval(_mapLivesTimer); G.mode='theme'; startGame(false, lv); }; });
 }
 function startGame(resume, atStage){ if(typeof atStage==='number'){ G.stage=atStage; G.score=0; }else if(resume){ const slot=SAVE[G.mode]; G.stage=slot?Math.max(1,slot.stage):1; G.score=slot?(slot.score||0):0; }else{ G.stage=1; G.score=0; } G.started=true; buildStage(); G.locked=false; saveGame(true); }
@@ -519,9 +495,10 @@ function spendLife(){ const s=computeLives(); if(s.count<=0){ const sec=Math.cei
 let _saveTimer=null; function saveGame(immediate){ const write=()=>{ try{ const slot=SAVE[G.mode]||(SAVE[G.mode]={stage:1,score:0,bestScore:0,bestStage:1}); slot.stage=G.stage; slot.score=G.score; slot.bestScore=Math.max(slot.bestScore||0, G.score); slot.bestStage=Math.max(slot.bestStage||1, G.stage); SAVE.lastMode=G.mode; localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }; if(immediate){ clearTimeout(_saveTimer); write(); } else{ clearTimeout(_saveTimer); _saveTimer=setTimeout(write,500); } }
 function applyDebugZones(){ const ls=SAVE.theme.levelStars||(SAVE.theme.levelStars={}); for(let i=1;i<=Math.max(1, MAX_STAGE-1);i++){ if(ls[i]==null) ls[i]=3; } }
 
-/* ---------- 부트스트랩 (게임 시작) ---------- */
+/* ---------- 게임 시작! ---------- */
 function boot(){ 
   syncMuteBtn(); 
+  initCanvas();
   resize(); 
   try{ if(new URLSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} 
   G.grid=[]; G.targets=[]; G.cur=null; G.queue=[]; G.locked=true; 
@@ -541,37 +518,3 @@ if(document.fonts&&document.fonts.ready){
 } else { 
   window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); 
 }
-
-/* ---------- 👇 여기서부터 파일 맨 밑바닥에 추가해주세요 👇 ---------- */
-
-window.addEventListener('load', () => {
-  // 상단 메뉴 버튼 기능
-  const btnMenu=document.getElementById('btnMenu'); if(btnMenu) btnMenu.onclick=()=>{
-    if(veil.classList.contains('on'))return; G.locked=true;
-    const info = `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p> <div>${G.targets.map(w=>`<span class="tchip" style="margin:2px;${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
-    show(`<h2>메뉴</h2>${info}<button class="btn" id="go">이어서 하기</button><p style="margin-top:12px;font-size:14px"><a href="#" id="switch" style="color:#d9a94a">🗺️ 지도로 이동</a> &nbsp;·&nbsp; <a href="#" id="restart" style="color:#ff9a5c">이 스테이지 재시작</a></p><button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
-    document.getElementById('go').onclick=()=>{hide();G.locked=false;}; document.getElementById('switch').onclick=ev=>{ev.preventDefault();hide();openMap();}; document.getElementById('restart').onclick=ev=>{ev.preventDefault();if(!spendLife())return;hide();startGame(false, G.stage);}; document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
-  };
-  
-  // 하단 아이템 및 버튼 기능 연결
-  const btnShop=document.getElementById('btnShop'); if(btnShop) btnShop.onclick=()=>{ if(veil.classList.contains('on'))return; G.locked=true; SFX.click(); openShop(); };
-  const btnSwap=document.getElementById('btnSwap'); if(btnSwap) btnSwap.onclick=()=>{ if(G.swaps<=0||G.fly||G.locked)return; SFX.click(); G.swaps--; const t=G.cur; G.cur=G.queue[0]; G.queue[0]=t; syncUI(); };
-  const btnHint=document.getElementById('btnHint'); if(btnHint) btnHint.onclick=()=>{ if(G.hints<=0||G.fly||G.locked)return; SFX.click(); const hit=completionsFor(G.cur.s); if(!hit.length){toast('이 글자로는 만들 단어가 없어요');return;} hit.sort((a,b)=>(b.cat===G.goal)-(a.cat===G.goal)||b.word.length-a.word.length); G.hints--; G.hintCells=[[hit[0].c,hit[0].r]]; toast(hit[0].word,[[hit[0].c,hit[0].r]]); syncUI(); };
-  const btnBomb=document.getElementById('btnBomb'); if(btnBomb) btnBomb.onclick=()=>{ if(G.bombs<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='bomb' ? null : 'bomb'; syncUI(); };
-  const btnRainbow=document.getElementById('btnRainbow'); if(btnRainbow) btnRainbow.onclick=()=>{ if(G.rainbows<=0||G.fly||G.locked)return; SFX.click(); G.activeItem = G.activeItem==='rainbow' ? null : 'rainbow'; syncUI(); };
-  const btnMute=document.getElementById('btnMute'); if(btnMute) btnMute.onclick=()=>{ SAVE.soundOn = !soundOn(); try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} syncMuteBtn(); if(soundOn()) SFX.click(); };
-
-  // ✨ 핵심: 화면 터치해서 버블 발사하는 신경망 연결!
-  if(cv) { 
-    cv.addEventListener('pointerdown',e=>{G.dragging=true;aimAt(...localPt(e));}); 
-    cv.addEventListener('pointermove',e=>{if(G.dragging)aimAt(...localPt(e));}); 
-    cv.addEventListener('pointerup',()=>{ if(!G.dragging)return; G.dragging=false; if(G.aim!=null)shoot(G.aim); G.aim=null; }); 
-    cv.addEventListener('pointercancel',()=>{G.dragging=false;G.aim=null;}); 
-  }
-});
-
-/* ---------- 누락된 유틸리티 함수 복구 ---------- */
-function pick(a){return a[Math.floor(Math.random()*a.length)];}
-function resetFillCount(){ _fillCount={}; }
-function fillSyllable(c,r){ const avoid=new Set(); if(c>0 && G.grid[r] && G.grid[r][c-1]) avoid.add(G.grid[r][c-1].s); if(r>0){ for(const [nc,nr] of nbrs(c,r)){ if(nr<r && G.grid[nr] && G.grid[nr][nc]) avoid.add(G.grid[nr][nc].s); } } let candidates=G.pool.filter(s=>!avoid.has(s)); if(!candidates.length) candidates=[...G.pool]; let minUse=Infinity; for(const s of candidates) minUse=Math.min(minUse,_fillCount[s]||0); const leastUsed=candidates.filter(s=>(_fillCount[s]||0)<=minUse+1); const chosen=pick(leastUsed.length?leastUsed:candidates); _fillCount[chosen]=(_fillCount[chosen]||0)+1; return chosen; }
-function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
