@@ -903,11 +903,12 @@ function renderTargetBar(){
 }
 function drawQueue(){
   if(!G.queue.length)return;
-  const x=W-R*1.8,y=G.shooterY-R*0.1,r=R*.82;
+  // 대포(W/2) 기준으로 우측에 바짝 붙임
+  const x=W/2 + R*2.8, y=G.shooterY + R*0.3, r=R*.82;
   ctx.save();
-  ctx.font=`700 ${R*.52}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='#f5e3ae';ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=4;
-  ctx.fillText('다음: '+G.queue[0].s,x,y-r*1.5);
+  ctx.font=`800 ${R*.48}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#ffffff';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=6;
+  ctx.fillText('다음: '+G.queue[0].s,x,y-r*1.6);
   ctx.restore();
   neon('#c8962f',6,2,()=>{ctx.beginPath();ctx.arc(x,y,r*1.12,0,7);ctx.stroke();});
   bubble(x,y,r*.92,G.queue[0].s,G.queue[0].col);
