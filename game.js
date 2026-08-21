@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 한글 단어 버블슈터 (최적화 버전)
+   낱글자 팡팡! — 한글 단어 버블슈터 (최종 3단 분리 완벽 적용본)
    ══════════════════════════════════════════ */
 
 /* ---------- 사전 ---------- */
@@ -75,8 +75,11 @@ let BX=0,BY=0,BW=0,BH=0;
 const FRAME=9;
 const BG_IMG_W=900, BG_IMG_H=1572;
 const BG_FRAME={left:0.028, right:0.972, top:0.148};
+
+/* ✨ 3단 분리 완벽 대응 리사이즈 함수 */
 function resize(){
   const stageEl=document.getElementById('stage');
+  if(!stageEl) return;
   const box=stageEl.getBoundingClientRect();
   DPR=Math.min(window.devicePixelRatio||1,2.5);
   W=Math.max(1,box.width); H=Math.max(1,box.height);
@@ -118,22 +121,7 @@ function resize(){
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
 }
-  
-  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right);
-  BW=bxRight-BX;
-  R=BW/(COLS*2);
-  const Rmax=Math.min(H*0.052, 46);
-  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
-  ROWH=R*1.72;
-  BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  
-  // ✨ 대포 위치를 배경 이미지의 돌 받침대(81.5% 지점)에 완벽 고정!
-  G.shooterY=bgY(0.815);
-  
-  BH=G.shooterY-BY;
-  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
-  BOARDLAYER=null; SPR.clear(); G.trajA=null;
-}
+
 let _rz;
 function onResize(){ clearTimeout(_rz); _rz=setTimeout(()=>{ resize(); },120); }
 window.addEventListener('resize',onResize);
@@ -153,7 +141,6 @@ const G={
   locked:true,shots:0,trajA:null,trajPts:[],banner:null
 };
 
-// 파티클 재활용 풀 (메모리 렉 방지)
 const MAX_PARTICLES = 150;
 const PARTICLE_POOL = Array.from({length: MAX_PARTICLES}, () => ({active: false, x:0, y:0, vx:0, vy:0, life:0, col:'#000', r:0}));
 function getParticle() {
@@ -182,7 +169,6 @@ const AXES=[
 /* ---------- 스테이지 ---------- */
 function buildFreeStage(){
   G.waves=[]; G.pops=[]; G.shake=0; G.flash=0;
-  // 기존 파티클 초기화
   PARTICLE_POOL.forEach(p => p.active = false);
   G.goal='자유';
   const cats=shuffle([...CATS]);
@@ -479,7 +465,7 @@ function findWordAt(c0,r0){
       let hit=DICT.has(str)?str:(DICT.has(rev)?rev:null);
       if(hit && (!best||hit.length>best.word.length)) best={word:hit,cells:path.slice(),cat:DICT.get(hit)};
     }
-    if(str.length>=MAXW)return;
+    if(str.length>=MAXW)return; // ✨ 5글자 단어도 완성되도록 버그 수정!
     for(const [nc,nr] of nbrs(c,r)){
       const k=nc+','+nr; if(visited.has(k))continue;
       const b=at(nc,nr); if(!b)continue;
@@ -516,7 +502,6 @@ function resolve(c,r){
     G.combo++; G.dryShots=0; G.wordsCompleted++;
     if(word.word in G.done && !G.done[word.word]) {
       G.done[word.word]=true;
-      // UI 개선: 목표 단어 달성 시 타겟바 크게 반짝임
       const tBar = document.getElementById('targetBar');
       if(tBar) {
         const chips = tBar.querySelectorAll('.tchip');
@@ -525,11 +510,7 @@ function resolve(c,r){
             chip.style.transform = 'scale(1.25)';
             chip.style.boxShadow = '0 0 20px #7ba05b';
             chip.style.zIndex = '10';
-            setTimeout(() => {
-              chip.style.transform = '';
-              chip.style.boxShadow = '';
-              chip.style.zIndex = '';
-            }, 400);
+            setTimeout(() => { chip.style.transform = ''; chip.style.boxShadow = ''; chip.style.zIndex = ''; }, 400);
           }
         });
       }
@@ -678,7 +659,7 @@ function checkState(){
   if(cy(lowest)+R>BY+BH) lose();
 }
 
-/* ---------- 이펙트 (오브젝트 풀링 적용) ---------- */
+/* ---------- 이펙트 ---------- */
 function addShake(amt){ G.shake=Math.min(G.shake+amt, 14); }
 function addWave(x,y,col,maxR){ G.waves.push({x,y,col,r:R*0.3,maxR:maxR||R*2.4,life:1}); }
 function addPop(x,y,text,col){ G.pops.push({x,y,text,col:col||'#fff6d0',life:1,vy:-1.2}); }
@@ -928,7 +909,6 @@ function renderTargetBar(){
 }
 function drawQueue(){
   if(!G.queue.length)return;
-  // 대포(W/2) 기준으로 우측에 바짝 붙임
   const x=W/2 + R*2.8, y=G.shooterY + R*0.3, r=R*.82;
   ctx.save();
   ctx.font=`800 ${R*.48}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -998,7 +978,7 @@ function draw(now){
     }
   if(G.fly)bubble(G.fly.x,G.fly.y,R*.94,G.fly.s,G.fly.col);
 
-  // 파티클 그리기 (오브젝트 풀링 연동)
+  // 파티클 그리기
   for(let i=0; i<MAX_PARTICLES; i++){
     const p = PARTICLE_POOL[i];
     if(p.active){
@@ -1062,7 +1042,8 @@ function draw(now){
     ctx.restore();
   }
   ctx.restore();
-if(G.flash>0.01){
+  
+  if(G.flash>0.01){
     ctx.save();
     ctx.globalAlpha=G.flash;
     ctx.fillStyle='#ffffff';
@@ -1070,7 +1051,7 @@ if(G.flash>0.01){
     ctx.restore();
   }
 
-  // 🌟 피버 타임 (3콤보 이상일 때 화면 테두리 반짝임 효과)
+  // ✨ 피버 타임
   if (G.combo >= 3) {
     ctx.save();
     const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 150);
@@ -1082,13 +1063,9 @@ if(G.flash>0.01){
 }
 function tick(now){
   stepFly();
-  // 파티클 업데이트 (오브젝트 풀링 연동)
   for(let i=0; i<MAX_PARTICLES; i++) {
     const p = PARTICLE_POOL[i];
-    if(p.active) {
-      p.x+=p.vx; p.y+=p.vy; p.vy+=.22; p.life-=.028;
-      if(p.life<=0) p.active=false;
-    }
+    if(p.active) { p.x+=p.vx; p.y+=p.vy; p.vy+=.22; p.life-=.028; if(p.life<=0) p.active=false; }
   }
   if(G.banner){G.banner.life-=.0085;if(G.banner.life<=0)G.banner=null;}
   for(const t of G.toasts)t.life-=.012;
@@ -1410,7 +1387,7 @@ function openMap(_isRetry){
   for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; }
   maxUnlocked=Math.min(maxUnlocked, MAX_STAGE);
   const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null;
-  const TOTAL=MAX_STAGE;
+  const TOTAL=Math.min(MAX_STAGE, Math.max(maxUnlocked+6, 12));
   const scrollEl=document.getElementById('mapScroll');
   const SPACING=108;
   const TOPPAD=60, BOTPAD=60;
@@ -1683,20 +1660,15 @@ document.getElementById('btnMute').onclick=()=>{
   SAVE.soundOn = !soundOn();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
   syncMuteBtn();
-  
   const bgm = document.getElementById('bgmAudio');
-  if(soundOn()) {
-    SFX.click();
-    bgm.play().catch(()=>{});
-  } else {
-    bgm.pause();
+  if(bgm){
+    if(soundOn()) { SFX.click(); bgm.play().catch(()=>{}); }
+    else { bgm.pause(); }
   }
 };
-
-// 화면 아무 곳이나 처음 터치하면 배경음악이 시작되도록 추가 (최신 브라우저 정책 대응)
 document.body.addEventListener('pointerdown', () => {
   const bgm = document.getElementById('bgmAudio');
-  if (soundOn() && bgm.paused) {
+  if (bgm && soundOn() && bgm.paused) {
     bgm.play().catch(()=>{});
   }
 }, { once: true });
