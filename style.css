@@ -62,26 +62,25 @@ canvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-i
 }
 .stat-pill b { color: #fff6e0; text-shadow: 0 1px 3px rgba(40,24,8,0.9); }
 
-/* 목표 단어: 스크롤 밑(86px) 고정 위치 지정 */
+/* 목표 단어: 스크롤 밑바닥에 살짝 걸치도록 위로 올리고 크기 축소 */
 #targetBar {
-  position: absolute; top: 86px; left: 0; right: 0;
+  position: absolute; top: 11.2%; left: 0; right: 0;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px;
-  pointer-events: auto; text-align: center;
+  pointer-events: auto; text-align: center; z-index: 4; /* 두루마리 위로 올라오게 */
 }
 .target-label {
-  font-size: 12px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.9); font-weight: 800;
-  background: rgba(30,15,5,0.7); padding: 4px 10px; border-radius: 999px; border: 1.5px solid #a86f2e;
+  font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.9); font-weight: 800;
+  background: rgba(30,15,5,0.85); padding: 3px 8px; border-radius: 999px; border: 1px solid #a86f2e;
 }
 .tchip {
-  border: 1.6px solid #a86f2e; border-radius: 999px; background: rgba(40,26,14,.8);
-  padding: 4px 10px; font-size: 13px; color: #f5e3ae; text-shadow: 0 1px 2px rgba(0,0,0,.8);
-  box-shadow: 0 3px 5px rgba(0,0,0,.5); white-space: nowrap; transition: .25s;
+  border: 1px solid #a86f2e; border-radius: 999px; background: rgba(40,26,14,.9);
+  padding: 3px 8px; font-size: 11px; color: #f5e3ae; text-shadow: 0 1px 2px rgba(0,0,0,.8);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5); white-space: nowrap; transition: .25s;
 }
 .tchip.done {
-  border-color: #7ba05b; color: #eafff0; text-shadow: 0 1px 2px rgba(0,0,0,.8);
-  box-shadow: 0 0 10px rgba(123,160,91,.5); background: rgba(123,160,91,.4);
+  border-color: #7ba05b; color: #eafff0;
+  box-shadow: 0 0 8px rgba(123,160,91,.5); background: rgba(123,160,91,.5);
 }
-
 /* 하단 아이템: 화면 끝 고정 */
 #bottomTier {
   position: absolute; bottom: 18px; left: 0; right: 0;
