@@ -1116,10 +1116,6 @@ document.getElementById('btnHint').onclick=()=>{
   toast(hit[0].word,[[hit[0].c,hit[0].r]]);
   syncUI();
 };
-document.getElementById('trayBtn').onclick=()=>{
-  SFX.click();
-  document.getElementById('tray').classList.toggle('open');
-};
 document.getElementById('btnBomb').onclick=()=>{
   if(G.bombs<=0||G.fly||G.locked)return;
   SFX.click();
