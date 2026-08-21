@@ -463,17 +463,38 @@ const PATH_IMG_ASPECT={ forest: 6398/900 };
 const FOREST_SUBIMAGES=[ {file:'assets/bg_ch4.webp?v=2', topFrac:0, hFrac:0.2499218505783057}, {file:'assets/bg_ch3.webp?v=2', topFrac:0.2499218505783057, hFrac:0.25023444826508284}, {file:'assets/bg_ch2.webp?v=2', topFrac:0.5001562988433885, hFrac:0.2499218505783057}, {file:'assets/bg_ch1.webp?v=2', topFrac:0.7500781494216943, hFrac:0.2499218505783057} ];
 
 function openMap(_isRetry){
-  const mv=document.getElementById('mapVeil'); if(mv)mv.classList.add('on'); const stars=SAVE.theme.levelStars||{}; let maxUnlocked=1; for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; } maxUnlocked=Math.min(maxUnlocked, MAX_STAGE); const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null; const TOTAL = MAX_STAGE; // ✨ 숨김 제한 해제: 100 스테이지까지 전부 그리기! const scrollEl=document.getElementById('mapScroll'); const containerW=scrollEl.clientWidth||390; const curZone=zoneIdx(TOTAL);
+  const mv=document.getElementById('mapVeil'); if(mv)mv.classList.add('on'); 
+  const stars=SAVE.theme.levelStars||{}; 
+  let maxUnlocked=1; for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; } 
+  maxUnlocked=Math.min(maxUnlocked, MAX_STAGE); 
+  const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null; 
+  
+  // ✨ 숨김 제한 해제: 100 스테이지까지 전부 그리기!
+  const TOTAL = MAX_STAGE; 
+  
+  // 날아갔던 변수들 복구!
+  const scrollEl=document.getElementById('mapScroll'); 
+  const containerW=scrollEl.clientWidth||390; 
+  const curZone=zoneIdx(TOTAL);
+  
   function xPct(lv){ return 50+Math.sin(lv*0.9)*26+((Math.sin(lv*12.9898)*43758.5453)%1 - 0.5)*10; }
   const zoneH=[]; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; zoneH[z] = PATH_POINTS[key] ? containerW*PATH_IMG_ASPECT[key] : 100*108; } const H = zoneH.reduce((a,b)=>a+b,0) + 120; const zoneTop=[], zoneBot=[]; { let bot=H-60; for(let z=0; z<=curZone; z++){ zoneBot[z]=bot; zoneTop[z]=bot-zoneH[z]; bot=zoneTop[z]; } }
   function nodePos(lv){ const z=zoneIdx(lv); const key=ZONES[z].key; const localLv=lv-z*100; if(PATH_POINTS[key]){ const raw=PATH_POINTS[key][localLv-1] || [50,50]; return { x: raw[0], y: zoneTop[z] + (raw[1]/100)*zoneH[z] }; }else{ return { x: xPct(lv), y: zoneBot[z] - (localLv-0.5)/100*zoneH[z] }; } }
+  
   let zonesHtml=''; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; if(key==='forest'){ FOREST_SUBIMAGES.forEach(sub=>{ zonesHtml += `<img src="${sub.file}" style="position:absolute;left:0;top:${zoneTop[z] + sub.topFrac*zoneH[z]}px;width:100%;height:${sub.hFrac*zoneH[z]}px;z-index:0;pointer-events:none">`; }); }else if(PATH_POINTS[key]){ zonesHtml += `<img src="${ZONES[z].img}" style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;z-index:0;pointer-events:none">`; }else{ zonesHtml += `<div style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;overflow:hidden;background-image:url('${ZONES[z].img}');background-repeat:repeat-y;background-size:100% auto;background-position:top center"></div>`; } }
+  
   let nodesHtml='', pathPts=[]; for(let lv=1; lv<=TOTAL; lv++){ const done = stars[lv]!=null, isNext = !done && lv===maxUnlocked, locked = !done && !isNext, isMilestone = lv%MILESTONE_EVERY===0, isFinal = lv===MAX_STAGE, cls = done?'done':(isNext?'next':'locked'), extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':''), p=nodePos(lv); pathPts.push([p.x,p.y]); const starHtml = done ? [[-10,-1],[0,-5],[10,-1]].map((sp,i)=>`<span class="mstar" style="left:calc(50% + ${sp[0]}px);top:${sp[1]}px">${i<stars[lv]?'★':'<span style=\'opacity:.35\'>★</span>'}</span>`).join('') : ''; const icon = isFinal ? '👑' : (isMilestone ? '🎁' : lv); nodesHtml += `<div class="mnode ${cls}${extraCls}" data-lv="${lv}" style="left:${p.x}%;top:${p.y}px">${done?'<span class="mdone-halo"></span>':''}${locked?'<span class="mlock">🔒</span>':icon}${starHtml}</div>`; }
+  
   let pathD=''; pathPts.forEach((p,i)=>{ if(i===0) pathD+=`M${p[0]},${p[1]}`; else pathD+=` C${pathPts[i-1][0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${p[1]}`; });
+  
   scrollEl.innerHTML=`<div id="mapInner" style="height:${H}px">${allCleared?`<div style="position:absolute;left:50%;top:20px;transform:translateX(-50%);color:#f5e3ae;text-align:center;font-size:14px;padding:6px 16px;white-space:nowrap;z-index:3">🏆 100 스테이지 완주! 대단해요</div>`:''}${zonesHtml}<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:${H}px;z-index:1;pointer-events:none"><path d="${pathD}" fill="none" stroke="#fff3c4" stroke-width="0.7" stroke-linecap="round" stroke-dasharray="0.5 1.2" opacity="0.45" vector-effect="non-scaling-stroke"/></svg>${nodesHtml}</div>`;
+  
   if(!_isRetry){ requestAnimationFrame(()=>{ if(Math.abs(scrollEl.clientWidth - containerW) > 2){ openMap(true); return; } }); } renderMapLives(); clearInterval(_mapLivesTimer); _mapLivesTimer=setInterval(renderMapLives,1000);
+  
   const tabsEl=document.getElementById('seasonTabs'); if(tabsEl){ if(ZONES.length <= 1){ tabsEl.innerHTML=''; } else { let tabsHtml=''; for(let z=0; z<ZONES.length; z++) tabsHtml += `<div class="stab ${z<=curZone?'':'locked'}" data-z="${z}">S${z+1}</div>`; tabsEl.innerHTML=tabsHtml; tabsEl.querySelectorAll('.stab').forEach(t=>{ t.onclick=()=>{ const z=+t.dataset.z; if(z>curZone) return; SFX.click(); scrollEl.scrollTo({top: Math.max(0, (zoneTop[z]+zoneBot[z])/2 - scrollEl.clientHeight/2), behavior:'smooth'}); }; }); } }
+  
   requestAnimationFrame(()=>{ const nextEl=scrollEl.querySelector('.mnode.next')||scrollEl.querySelector('.mnode.done:last-of-type'); if(nextEl) nextEl.scrollIntoView({block:'center'}); });
+  
   scrollEl.querySelectorAll('.mnode').forEach(el=>{ el.onclick=()=>{ const lv=+el.dataset.lv; if(el.classList.contains('locked') || !spendLife()) return; SFX.click(); document.getElementById('mapVeil').classList.remove('on'); clearInterval(_mapLivesTimer); G.mode='theme'; startGame(false, lv); }; });
 }
 function startGame(resume, atStage){ if(typeof atStage==='number'){ G.stage=atStage; G.score=0; }else if(resume){ const slot=SAVE[G.mode]; G.stage=slot?Math.max(1,slot.stage):1; G.score=slot?(slot.score||0):0; }else{ G.stage=1; G.score=0; } G.started=true; buildStage(); G.locked=false; saveGame(true); }
