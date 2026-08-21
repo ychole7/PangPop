@@ -74,7 +74,7 @@ const COLS=7;
 let BX=0,BY=0,BW=0,BH=0;
 const FRAME=9;
 const BG_IMG_W=900, BG_IMG_H=1572;
-const BG_FRAME={left:0.028, right:0.972, top:0.24};
+const BG_FRAME={left:0.028, right:0.972, top:0.148};
 function resize(){
   const stageEl=document.getElementById('stage'), appEl=document.getElementById('app');
   const box=stageEl.getBoundingClientRect();
@@ -86,14 +86,15 @@ function resize(){
   const scale=Math.min(appBox.width/BG_IMG_W, appBox.height/BG_IMG_H);
   const imgW=BG_IMG_W*scale, imgH=BG_IMG_H*scale;
   const imgOffX=(appBox.width-imgW)/2;
+  const imgOffY=(appBox.height-imgH)/2; /* ✨ 배경을 중앙으로 내린 값을 계산 */
   const stageOffX=box.left-appBox.left, stageOffY=box.top-appBox.top;
   const bgX=fx=>imgOffX+fx*imgW-stageOffX;
-  const bgY=fy=>fy*imgH-stageOffY;
+  const bgY=fy=>imgOffY+fy*imgH-stageOffY; /* ✨ Y좌표에 더해주기 */
   const scrollEl=document.getElementById('scoreScroll');
   if(scrollEl){
     const sL=imgOffX+0.3111*imgW, sR=imgOffX+0.7111*imgW;
     const sT=0.0350*imgH, sB=0.1240*imgH;
-    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
+    scrollEl.style.left=sL+'px'; scrollEl.style.top=(imgOffY+sT)+'px'; /* ✨ 점수판도 같이 내리기 */
     scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
     scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
   }
@@ -104,7 +105,7 @@ function resize(){
   if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
   ROWH=R*1.72;
   BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=H*0.75;
+  G.shooterY=H*0.655;
   BH=G.shooterY-BY;
   G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
   BOARDLAYER=null; SPR.clear(); G.trajA=null;
