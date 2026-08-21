@@ -1713,6 +1713,23 @@ function openMap(){
   }
   html += zonesHtml + svg + nodesHtml + '</div>';
   scrollEl.innerHTML=html;
+
+  // ── 임시 디버그 표시 (원인 파악용, 나중에 제거) ──
+  const _p1=nodePos(1), _p2=nodePos(2);
+  const _dbg=document.createElement('div');
+  _dbg.style.cssText='position:fixed;left:4px;top:4px;z-index:999;background:rgba(0,0,0,.85);color:#0f0;font-size:10px;font-family:monospace;padding:6px 8px;border-radius:4px;line-height:1.5;white-space:pre;pointer-events:none';
+  _dbg.textContent =
+    `containerW=${containerW}\n`+
+    `scrollEl.clientWidth=${scrollEl.clientWidth}\n`+
+    `window.innerWidth=${window.innerWidth}\n`+
+    `devicePixelRatio=${window.devicePixelRatio}\n`+
+    `zoneH[0]=${zoneH[0]?.toFixed(1)}\n`+
+    `zoneTop[0]=${zoneTop[0]?.toFixed(1)}\n`+
+    `node1 x=${_p1.x.toFixed(1)} y=${_p1.y.toFixed(1)}\n`+
+    `node2 x=${_p2.x.toFixed(1)} y=${_p2.y.toFixed(1)}`;
+  document.getElementById('mapVeil').appendChild(_dbg);
+  // ── 디버그 표시 끝 ──
+
   renderMapLives();
   clearInterval(_mapLivesTimer);
   _mapLivesTimer=setInterval(renderMapLives,1000);
