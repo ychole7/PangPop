@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 완벽 반응형(Scale Trick) 탑재 버전
+   낱글자 팡팡! — 리소스 분리 완벽 반응형(Responsive) 엔진
    ══════════════════════════════════════════ */
 
 const DICT_BY_CAT = {
@@ -26,7 +26,7 @@ function randCol(){ return Math.floor(Math.random()*NCOL); }
 
 let cv, ctx;
 let W=0,H=0,R=0,ROWH=0,DPR=1, BX=0,BY=0,BW=0,BH=0;
-const COLS=7, FRAME=9, BG_FRAME={left:0.028, right:0.972, top:0.148};
+const COLS=7;
 
 function initCanvas() {
   cv = document.getElementById('cv');
@@ -37,43 +37,37 @@ function initCanvas() {
 
 function resize(){
   if(!cv && !initCanvas()) return;
-  const stageEl=document.getElementById('stage');
-  if(!stageEl) return;
+  const boardImg = document.getElementById('boardBg');
+  if(!boardImg) return;
   
-  const box=stageEl.getBoundingClientRect();
-  DPR=Math.min(window.devicePixelRatio||1,2.5);
-  W=box.width; H=box.height;
-  if(W===0 || H===0) return;
+  const box = boardImg.getBoundingClientRect();
+  if(box.width === 0 || box.height === 0) return;
   
-  cv.width=W*DPR; cv.height=H*DPR;
+  DPR = Math.min(window.devicePixelRatio||1,2.5);
+  W = box.width; H = box.height;
+  cv.width = W * DPR; cv.height = H * DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  // ✨ UI 스케일링 마법 (가상의 390px 폰 기준)
-  const uiLayer = document.getElementById('uiLayer');
-  if(uiLayer) uiLayer.style.transform = `scale(${W / 390})`;
-
-  const bgX=fx=>fx*W;
-  const bgY=fy=>fy*H;
-
-  const scrollEl=document.getElementById('scoreScroll');
-  if(scrollEl){
-    const sL=0.3111*W, sR=0.7111*W, sT=0.0350*H, sB=0.1240*H;
-    scrollEl.style.left=sL+'px'; scrollEl.style.top=sT+'px';
-    scrollEl.style.width=(sR-sL)+'px'; scrollEl.style.height=(sB-sT)+'px';
-    scrollEl.style.fontSize=Math.max(14,(sB-sT)*0.42)+'px';
-  }
-
-  BX=bgX(BG_FRAME.left); const bxRight=bgX(BG_FRAME.right); BW=bxRight-BX; R=BW/(COLS*2);
-  const Rmax=Math.min(H*0.052, 46);
-  if(R>Rmax){ R=Rmax; BW=R*COLS*2; BX=bgX(BG_FRAME.left)+((bxRight-bgX(BG_FRAME.left))-BW)/2; }
-  ROWH=R*1.72; BY=Math.max(6+FRAME, bgY(BG_FRAME.top));
-  G.shooterY=bgY(0.815); BH=G.shooterY-BY;
-  G.maxRows=Math.max(6,Math.floor((BH-R*2)/ROWH)+1);
-  BOARDLAYER=null; SPR.clear(); G.trajA=null;
+  // ✨ 새 나무판 이미지(board_frame.png)에 맞춘 정밀 좌표!
+  // 나무 테두리 안쪽 빈 공간만 버블이 들어가도록 퍼센트로 지정합니다.
+  BX = W * 0.15; // 왼쪽 나무틀 두께 피하기
+  const bxRight = W * 0.85; // 오른쪽 나무틀 피하기
+  BW = bxRight - BX; 
+  R = BW / (COLS * 2);
+  
+  BY = H * 0.19; // 지붕과 꽃장식 피하기 (상단)
+  G.shooterY = H * 0.87; // 바닥 돌계단 위치 (하단 대포)
+  BH = G.shooterY - BY;
+  
+  G.maxRows = Math.max(6, Math.floor((BH - R*2) / (R*1.72)) + 1);
+  ROWH = R * 1.72;
+  SPR.clear(); G.trajA=null;
 }
 
 let _rz; window.addEventListener('resize',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
 window.addEventListener('orientationchange',()=>{ clearTimeout(_rz); _rz=setTimeout(resize,120); });
+// 이미지가 로드된 후 한 번 더 크기 계산
+document.getElementById('boardBg')?.addEventListener('load', resize);
 
 const G={ grid:[],parity:0,stage:1,score:0,combo:0,started:false,mode:'theme',goal:'과일',pool:[],words:[],targets:[],done:{},cur:null,queue:[],fly:null,aim:null,dragging:false,toasts:[],waves:[],pops:[],shake:0,flash:0,shooterY:0,maxRows:10,dryShots:0,swaps:3,hints:3,hintCells:null,bombs:2,rainbows:2,activeItem:null,wordsCompleted:0,freeGoal:8,locked:true,shots:0,trajA:null,trajPts:[],banner:null };
 const PARTICLE_POOL=Array.from({length:100},()=>({active:false,x:0,y:0,vx:0,vy:0,life:0,col:'#000',r:0}));
@@ -302,10 +296,9 @@ function soundOn(){ return SAVE.soundOn!==false; }
 function tone(freq0,freq1,dur,gain,type,delay){ if(!soundOn())return; const ax=getActx(); if(!ax)return; try{ const t0=ax.currentTime+(delay||0); const o=ax.createOscillator(),g=ax.createGain(); o.type=type||'triangle'; o.frequency.setValueAtTime(freq0,t0); if(freq1) o.frequency.exponentialRampToValueAtTime(freq1,t0+dur*0.55); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(gain,t0+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur); o.connect(g); g.connect(ax.destination); o.start(t0); o.stop(t0+dur+0.02); }catch(e){} }
 const SFX={ pop(){ tone(520+Math.random()*260,880,0.17,0.07,'triangle'); }, click(){ tone(700,900,0.06,0.05,'square'); }, wordComplete(combo,bonus){ const base=440+Math.min(combo,5)*40; const ratios=bonus?[1,1.26,1.5,2]:[1,1.26,1.5]; ratios.forEach((r,i)=>tone(base*r,base*r*1.15,0.22,0.09,'triangle',i*0.045)); }, miss(){ tone(260,180,0.14,0.045,'sine'); }, rowAdd(){ tone(180,120,0.3,0.06,'sawtooth'); }, stageClear(){ [0,1,2,3].forEach(i=>tone(523.25*Math.pow(2,i/12*4), null, 0.28,0.08,'triangle',i*0.11)); }, gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); }, buy(){ tone(700,1100,0.14,0.07,'triangle'); tone(1050,1400,0.16,0.06,'triangle',0.06); } };
 
-const ASSET_SRC={ scene:'assets/scene.svg', cannon:'assets/cannon.png', gem0:'assets/gem_jade.png', gem1:'assets/gem_ruby.png', gem2:'assets/gem_turquoise.png', gem3:'assets/gem_amber.png', gem4:'assets/gem_amethyst.png', gem5:'assets/gem_onyx.png' };
+const ASSET_SRC={ cannon:'assets/cannon.png', gem0:'assets/gem_jade.png', gem1:'assets/gem_ruby.png', gem2:'assets/gem_turquoise.png', gem3:'assets/gem_amber.png', gem4:'assets/gem_amethyst.png', gem5:'assets/gem_onyx.png' };
 const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{ const i=new Image(); i.onload=()=>{ASSETS[k]=i;res();}; i.onerror=()=>{res();}; i.src=src; }))); }
 
-function roundRect(x,y,w,h,r){ ctx.beginPath();ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function neon(col,blur,w,fn){ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.shadowColor=col; ctx.shadowBlur=blur*1.6; fn(); ctx.shadowBlur=blur*.7; fn(); ctx.restore(); }
 function drawBubbleRaw(x,y,r,s,col,glow,special){
   let [c1,c2]=colByIdx(col||0); if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; } else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
@@ -323,11 +316,6 @@ const SPR=new Map(); let FONTS_READY=false;
 function sprite(s,r,glow,col){ const key=s+'|'+r+'|'+(glow?1:0)+'|'+(col||0); let c=SPR.get(key); if(c)return c; const pad=Math.ceil(r*(glow?2.0:1.55)), size=pad*2; c=document.createElement('canvas'); c.width=Math.ceil(size*DPR); c.height=Math.ceil(size*DPR); const g2=c.getContext('2d'); g2.setTransform(DPR,0,0,DPR,0,0); const keep=ctx; ctx=g2; drawBubbleRaw(pad,pad,r,s,col,glow); ctx=keep; c._pad=pad; if(FONTS_READY){ if(SPR.size>320)SPR.clear(); SPR.set(key,c); } return c; }
 function bubble(x,y,r,s,col,glow,special){ if(special){ drawBubbleRaw(x,y,r,s,col,glow,special); return; } r=Math.round(r*2)/2; const c=sprite(s,r,glow,col); ctx.drawImage(c,x-c._pad,y-c._pad,c._pad*2,c._pad*2); }
 
-let BOARDLAYER=null;
-function drawBoard(){
-  if(!BOARDLAYER){ const c=document.createElement('canvas'); c.width=Math.ceil(W*DPR); c.height=Math.ceil(H*DPR); const g2=c.getContext('2d'); g2.setTransform(DPR,0,0,DPR,0,0); const keep=ctx; ctx=g2; const x=BX-FRAME,y=BY-FRAME,w=BW+FRAME*2,h=BH+FRAME*2; ctx.save(); roundRect(x,y,w,h,24); ctx.fillStyle='rgba(20,12,6,.16)';ctx.fill(); ctx.restore(); ctx=keep; BOARDLAYER=c; }
-  ctx.drawImage(BOARDLAYER,0,0,W,H);
-}
 function pipePos(){ const cx0=W/2, sy=G.shooterY, img=ASSETS.cannon; if(!img) return {x:cx0,y:sy}; const w=R*4.8, h=w*(img.height/img.width); return {x: cx0-w/2+w*0.52, y: sy+R*0.0+h*-0.05}; }
 function drawShooter(now){
   const cx0=W/2, sy=G.shooterY, img=ASSETS.cannon, p=pipePos();
@@ -341,7 +329,6 @@ function drawQueue(){
 }
 function draw(now){
   ctx.clearRect(0,0,W,H); ctx.save(); if(G.shake>0.3){ ctx.translate((Math.random()-0.5)*G.shake, (Math.random()-0.5)*G.shake); }
-  drawBoard();
   if(G.aim!=null&&!G.fly&&!G.locked){
     if(G.trajA!==G.aim){G.trajA=G.aim; let x=W/2,y=G.shooterY,vx=Math.cos(G.aim)*R*.62,vy=Math.sin(G.aim)*R*.62; G.trajPts=[]; for(let i=0;i<200;i++){ x+=vx;y+=vy; if(y<BY+BH){ if(x<BX+R){x=BX+R;vx*=-1;} if(x>BX+BW-R){x=BX+BW-R;vx*=-1;} } if(y<=BY+R)break; if(y<BY+BH&&hitsBubble(x,y))break; if(i%4===0)G.trajPts.push([x,y]); } }
     const pts=G.trajPts; ctx.save();ctx.fillStyle='#f0d896';ctx.shadowColor='#c8962f';ctx.shadowBlur=8; pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(p[0],p[1],R*.13*(1-i/pts.length*.5),0,7);ctx.fill();}); if(pts.length>2){ const a=pts[pts.length-1],b2=pts[pts.length-2]; ctx.translate(a[0],a[1]);ctx.rotate(Math.atan2(a[1]-b2[1],a[0]-b2[0])+Math.PI/2); ctx.beginPath(); ctx.moveTo(0,-R*.42);ctx.lineTo(R*.30,R*.18);ctx.lineTo(-R*.30,R*.18); ctx.closePath();ctx.fill(); } ctx.restore();
@@ -452,10 +439,9 @@ function intro(){
 
 let _mapLivesTimer=null;
 function renderMapLives(){ const el=document.getElementById('mapLives'); if(!el)return; const s=computeLives(); if(s.count>=MAX_LIVES){ el.innerHTML=`❤️ ${s.count}/${MAX_LIVES}`; return; } const sec=Math.ceil(secToNextLife()); el.innerHTML=`❤️ ${s.count}/${MAX_LIVES} <small>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</small>`; }
-const ZONES=[ {key:'forest', img:'assets/map_zone_forest.webp'} ]; function zoneIdx(lv){ return Math.min(4, Math.floor((lv-1)/100)); }
+const ZONES=[ {key:'forest', img:'assets/bg_landscape.jpg'} ]; function zoneIdx(lv){ return Math.min(4, Math.floor((lv-1)/100)); }
 const PATH_POINTS={ forest: [ [58.33,99.31],[64.43,97.62],[51.48,96.65],[36.81,95.95],[37.76,94.58],[52.81,94.12],[66.52,93.36],[56.05,91.97],[41.38,91.32],[45.57,89.79], [58.33,88.69],[47.67,87.29],[33.76,86.96],[26.9,85.51],[41.19,84.95],[53.57,84.3],[47.29,82.96],[59.19,82.06],[74.67,81.28],[74.67,80.11], [59.67,79.63],[46.57,79.16],[46.81,77.82],[57.05,76.47],[41.1,75.67],[61.19,74.32],[54.33,73.03],[40.43,71.79],[46.9,70.61],[57.29,69.66], [68.24,68.61],[59.67,67.54],[48,66.87],[38.71,65.93],[38.48,64.48],[49.19,63.67],[59.67,62.93],[68.24,61.92],[59.43,61.05],[48.48,60.31], [39.19,59.57],[37.95,58.1],[49.76,57.35],[59.67,56.51],[57.76,55.07],[47.48,54.31],[40.14,53.06],[51.1,52.22],[58.71,51.28],[46.33,50.51], [60.62,49.52],[53.95,48.21],[43.1,47.35],[37.95,45.71],[49.95,45.04],[57.76,44.04],[58.71,42.77],[48.62,41.92],[39.19,41.15],[39.9,39.77], [51.1,39.2],[61.1,38.46],[61.81,37.05],[50.38,36.31],[38.95,35.44],[45.38,34.26],[39.67,32.37],[55.29,33.29],[61,32.0],[50.33,31.06], [39.67,30.11],[48.43,28.82],[59.29,27.69],[57.57,26.4],[49.95,25.46],[56.43,24.6],[48.24,23.54],[25,22.82],[37.38,22.15],[48.43,21.45], [55.67,20.21],[47.67,19.08],[37.19,18.28],[28.81,17.15],[39.48,16.23],[50.33,15.48],[60.24,14.54],[59.1,13.09],[48.81,12.47],[40.43,11.55], [33.95,8.59],[48.24,10.13],[58.33,9.16],[63.29,7.92],[52.62,7.09],[41.57,6.23],[31.1,5.58],[25.19,4.64],[37.29,4.35],[45.62,3.28] ] };
 const PATH_IMG_ASPECT={ forest: 6398/900 };
-const FOREST_SUBIMAGES=[ {file:'assets/bg_ch4.webp?v=2', topFrac:0, hFrac:0.2499218505783057}, {file:'assets/bg_ch3.webp?v=2', topFrac:0.2499218505783057, hFrac:0.25023444826508284}, {file:'assets/bg_ch2.webp?v=2', topFrac:0.5001562988433885, hFrac:0.2499218505783057}, {file:'assets/bg_ch1.webp?v=2', topFrac:0.7500781494216943, hFrac:0.2499218505783057} ];
 
 function openMap(_isRetry){
   const mv=document.getElementById('mapVeil'); if(mv)mv.classList.add('on'); const stars=SAVE.theme.levelStars||{}; let maxUnlocked=1; for(let i=1;i<=MAX_STAGE;i++){ if(stars[i]!=null) maxUnlocked=i+1; } maxUnlocked=Math.min(maxUnlocked, MAX_STAGE); const allCleared = maxUnlocked>=MAX_STAGE && stars[MAX_STAGE]!=null; const TOTAL = MAX_STAGE; 
@@ -463,7 +449,7 @@ function openMap(_isRetry){
   function xPct(lv){ return 50+Math.sin(lv*0.9)*26+((Math.sin(lv*12.9898)*43758.5453)%1 - 0.5)*10; }
   const zoneH=[]; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; zoneH[z] = PATH_POINTS[key] ? containerW*PATH_IMG_ASPECT[key] : 100*108; } const H = zoneH.reduce((a,b)=>a+b,0) + 120; const zoneTop=[], zoneBot=[]; { let bot=H-60; for(let z=0; z<=curZone; z++){ zoneBot[z]=bot; zoneTop[z]=bot-zoneH[z]; bot=zoneTop[z]; } }
   function nodePos(lv){ const z=zoneIdx(lv); const key=ZONES[z].key; const localLv=lv-z*100; if(PATH_POINTS[key]){ const raw=PATH_POINTS[key][localLv-1] || [50,50]; return { x: raw[0], y: zoneTop[z] + (raw[1]/100)*zoneH[z] }; }else{ return { x: xPct(lv), y: zoneBot[z] - (localLv-0.5)/100*zoneH[z] }; } }
-  let zonesHtml=''; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; if(key==='forest'){ FOREST_SUBIMAGES.forEach(sub=>{ zonesHtml += `<img src="${sub.file}" style="position:absolute;left:0;top:${zoneTop[z] + sub.topFrac*zoneH[z]}px;width:100%;height:${sub.hFrac*zoneH[z]}px;z-index:0;pointer-events:none">`; }); }else if(PATH_POINTS[key]){ zonesHtml += `<img src="${ZONES[z].img}" style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;z-index:0;pointer-events:none">`; }else{ zonesHtml += `<div style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;overflow:hidden;background-image:url('${ZONES[z].img}');background-repeat:repeat-y;background-size:100% auto;background-position:top center"></div>`; } }
+  let zonesHtml=''; for(let z=0; z<=curZone; z++){ const key=ZONES[z].key; zonesHtml += `<img src="${ZONES[z].img}" style="position:absolute;left:0;top:${zoneTop[z]}px;width:100%;height:${zoneH[z]}px;z-index:0;pointer-events:none;object-fit:cover;">`; }
   let nodesHtml='', pathPts=[]; for(let lv=1; lv<=TOTAL; lv++){ const done = stars[lv]!=null, isNext = !done && lv===maxUnlocked, locked = !done && !isNext, isMilestone = lv%MILESTONE_EVERY===0, isFinal = lv===MAX_STAGE, cls = done?'done':(isNext?'next':'locked'), extraCls = isFinal?' mfinal':(isMilestone?' mmilestone':''), p=nodePos(lv); pathPts.push([p.x,p.y]); const starHtml = done ? [[-10,-1],[0,-5],[10,-1]].map((sp,i)=>`<span class="mstar" style="left:calc(50% + ${sp[0]}px);top:${sp[1]}px">${i<stars[lv]?'★':'<span style=\'opacity:.35\'>★</span>'}</span>`).join('') : ''; const icon = isFinal ? '👑' : (isMilestone ? '🎁' : lv); nodesHtml += `<div class="mnode ${cls}${extraCls}" data-lv="${lv}" style="left:${p.x}%;top:${p.y}px">${done?'<span class="mdone-halo"></span>':''}${locked?'<span class="mlock">🔒</span>':icon}${starHtml}</div>`; }
   let pathD=''; pathPts.forEach((p,i)=>{ if(i===0) pathD+=`M${p[0]},${p[1]}`; else pathD+=` C${pathPts[i-1][0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${(pathPts[i-1][1]+p[1])/2} ${p[0]},${p[1]}`; });
   scrollEl.innerHTML=`<div id="mapInner" style="height:${H}px">${allCleared?`<div style="position:absolute;left:50%;top:20px;transform:translateX(-50%);color:#f5e3ae;text-align:center;font-size:14px;padding:6px 16px;white-space:nowrap;z-index:3">🏆 100 스테이지 완주! 대단해요</div>`:''}${zonesHtml}<svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:${H}px;z-index:1;pointer-events:none"><path d="${pathD}" fill="none" stroke="#fff3c4" stroke-width="0.7" stroke-linecap="round" stroke-dasharray="0.5 1.2" opacity="0.45" vector-effect="non-scaling-stroke"/></svg>${nodesHtml}</div>`;
@@ -485,7 +471,6 @@ let _saveTimer=null; function saveGame(immediate){ const write=()=>{ try{ const 
 
 function applyDebugZones(){ const ls=SAVE.theme.levelStars||(SAVE.theme.levelStars={}); for(let i=1;i<=Math.max(1, MAX_STAGE-1);i++){ if(ls[i]==null) ls[i]=3; } }
 
-/* ---------- 게임 부트스트랩 ---------- */
 function boot(){ 
   syncMuteBtn(); 
   initCanvas();
@@ -498,13 +483,4 @@ function boot(){
 }
 
 function markFontsReady(){ FONTS_READY=true; SPR.clear(); BOARDLAYER=null; }
-
-if(document.fonts&&document.fonts.ready){ 
-  boot(); 
-  Promise.all([document.fonts.load("800 20px 'Pretendard'"),document.fonts.load("700 20px 'Pretendard'")])
-  .then(()=>document.fonts.ready).then(markFontsReady)
-  .catch(()=>{ setTimeout(markFontsReady,800); }); 
-  setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000); 
-} else { 
-  window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); 
-}
+if(document.fonts&&document.fonts.ready){ boot(); Promise.all([document.fonts.load("800 20px 'Pretendard'"),document.fonts.load("700 20px 'Pretendard'")]).then(()=>document.fonts.ready).then(markFontsReady).catch(()=>{ setTimeout(markFontsReady,800); }); setTimeout(()=>{ if(!FONTS_READY) markFontsReady(); },2000); } else { window.addEventListener('load',()=>{ boot(); setTimeout(markFontsReady,600); }); }
