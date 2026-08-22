@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 최종 반응형 & 구슬/아이템 비율 고정 엔진
+   낱글자 팡팡! — 구슬 찌그러짐 방지 & 대포 조준 완벽화
    ══════════════════════════════════════════ */
 
 const SAVE_KEY='pangpop_save_v1';
@@ -56,17 +56,16 @@ function resize(){
   
   DPR = Math.min(window.devicePixelRatio||1,2.5);
   W = box.width; H = box.height;
-  
-  // ✨ CSS에 의한 강제 찌그러짐 방지! 캔버스의 논리/물리 픽셀을 명시적으로 고정
   cv.width = W * DPR; cv.height = H * DPR;
-  cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
   BX = W * 0.05; 
   BW = W * 0.90; 
   R = BW / (COLS * 2);
   BY = 10 + R; 
-  G.shooterY = H - (R * 4.5); 
+  
+  // ✨ 대포 입구 싱크 완벽 조준! (바닥에서 구슬 4개 높이 띄움)
+  G.shooterY = H - (R * 4.0); 
   BH = G.shooterY - BY;
   ROWH = R * 1.72;
   G.maxRows = Math.max(6, Math.floor((BH - R*2) / ROWH) + 1);
@@ -309,18 +308,15 @@ const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_
 
 function lighten(hex,amt){ const n=parseInt(hex.slice(1),16); return `rgb(${Math.min(255,((n>>16)&255)+amt*2)|0},${Math.min(255,((n>>8)&255)+amt*2)|0},${Math.min(255,(n&255)+amt*2)|0})`; }
 
-// ✨ 찌그러짐 방지! Math.min을 써서 구슬 이미지를 정확한 1:1 정사각형으로 잘라냅니다.
+// ✨ 찌그러짐 원천 차단! (이미지를 비율 그대로 자름)
 function drawBubbleRaw(x,y,r,s,col,glow,special){
   const rr = r * 0.94;
   const img = ASSETS.balls;
   
   if(img && !special) {
     const sw = img.width / 5, sh = img.height / 2;
-    const size = Math.min(sw, sh); // 정확한 정사각형 영역만 추출
-    const cIdx = (col || 0) % 10;
-    const sx = (cIdx % 5) * sw + (sw - size)/2;
-    const sy = Math.floor(cIdx / 5) * sh + (sh - size)/2;
-    ctx.drawImage(img, sx, sy, size, size, x - rr, y - rr, rr * 2, rr * 2);
+    // 억지로 1:1로 구기지 않고 이미지를 그대로 박아넣음!
+    ctx.drawImage(img, (col%5)*sw, Math.floor((col%10)/5)*sh, sw, sh, x - rr, y - rr, rr * 2, rr * 2);
   } else {
     let [c1,c2]=colByIdx(col||0); if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; } else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
     ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip(); const g=ctx.createRadialGradient(x-rr*.32,y-rr*.38,rr*.12, x,y,rr*1.15); g.addColorStop(0, lighten(c1,18)); g.addColorStop(.45, c1); g.addColorStop(1, c2); ctx.fillStyle=g; ctx.fillRect(x-rr,y-rr,rr*2,rr*2); ctx.restore();
@@ -348,19 +344,22 @@ function drawShooter(now){
   if(img) {
     const w = R * 6.5; 
     const h = w * (img.height / img.width);
-    ctx.drawImage(img, cx0 - w/2, G.shooterY - h*0.2, w, h); 
+    // ✨ 대포 입구에 딱 맞추기!
+    ctx.drawImage(img, cx0 - w/2, G.shooterY - h * 0.1, w, h); 
   }
   
   if(!G.fly && G.cur) { 
     const bob = Math.sin(now/420) * R * 0.05; 
-    bubble(cx0, G.shooterY + bob, R*0.94, G.cur.s, G.cur.col); 
+    // ✨ 장전된 구슬이 대포 입구에 예쁘게 안착
+    bubble(cx0, G.shooterY - R*0.5 + bob, R*0.94, G.cur.s, G.cur.col, true); 
     
     if(G.activeItem){ ctx.save(); ctx.font=`${R*.62}px sans-serif`; ctx.textAlign='center';ctx.textBaseline='middle'; ctx.fillText(G.activeItem==='bomb'?'💣':'🌈', cx0+R*0.78, G.shooterY+bob-R*0.78); ctx.restore(); } 
   }
 }
 function drawQueue(){
   if(!G.queue.length)return; 
-  const x = W/2 + R*3.2, y = G.shooterY + R*1.2, r = R*0.75;
+  // ✨ '다음' 구슬 바퀴 피해서 우측 배치
+  const x = W/2 + R*3.8, y = G.shooterY + R*0.6, r = R*0.75;
   ctx.save(); ctx.font=`800 ${R*.48}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=6; ctx.fillText('다음: '+G.queue[0].s,x,y-r*1.6); ctx.restore();
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,r*1.1,0,7); ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fill(); ctx.restore();
   bubble(x,y,r*0.92,G.queue[0].s,G.queue[0].col);
@@ -454,7 +453,6 @@ function shopHTML(){
 function wireShop(){ if(card)card.querySelectorAll('button[data-id]').forEach(btn=>{ btn.onclick=()=>{ const it=SHOP_ITEMS.find(x=>x.id===btn.dataset.id); if(!it) return; const coins=SAVE.coins||0; if(coins<it.price) return; SAVE.coins=coins-it.price; it.apply(); saveGame(true); SFX.buy(); syncUI(); show(shopHTML()); wireShop(); }; }); const sc=document.getElementById('shopClose'); if(sc)sc.onclick=()=>{ SFX.click(); hide(); G.locked=false; }; }
 function calcStars(){ const goal = G.mode==='theme' ? G.targets.length : G.freeGoal; const ratio = Math.max(goal, Math.ceil(goal*1.3))/Math.max(1, G.shots); if(ratio>=0.85) return 3; if(ratio>=0.55) return 2; return 1; }
 function starRow(n){ let out=''; for(let i=0;i<3;i++) out+= i<n ? '<span style="color:#ffe08c;text-shadow:0 0 12px #ffb15c">★</span>' : '<span style="color:rgba(255,255,255,.25)">★</span>'; return `<div style="font-size:34px;letter-spacing:6px;margin:8px 0">${out}</div>`; }
-
 function win(){
   G.locked=true;G.score+=1000; const stars=calcStars(), isMilestone=G.mode==='theme'&&G.stage%MILESTONE_EVERY===0, isFinal=G.mode==='theme'&&G.stage===MAX_STAGE, milestoneBonus=isFinal?1000:(isMilestone?200:0), coinGain=30+G.stage*4+stars*15+milestoneBonus; SAVE.coins=(SAVE.coins||0)+coinGain;
   if(G.mode==='theme'){ if(!SAVE.theme.levelStars) SAVE.theme.levelStars={}; const prev=SAVE.theme.levelStars[G.stage]||0; if(stars>prev){ SAVE.totalStars=(SAVE.totalStars||0)+(stars-prev); SAVE.theme.levelStars[G.stage]=stars; } }else{ SAVE.totalStars=(SAVE.totalStars||0)+stars; } saveGame(true); SFX.stageClear(); addShake(8+stars*2); flash(0.3);
@@ -464,7 +462,6 @@ function win(){
   const btnGo=document.getElementById('go'); if(btnGo) btnGo.onclick=()=>{ SFX.click(); if(G.mode==='theme'){ G.stage=Math.min(G.stage+1, MAX_STAGE); } else{ G.stage++; } hide();G.locked=false;buildStage();saveGame(true); };
   const toMapBtn=document.getElementById('toMap'); if(toMapBtn) toMapBtn.onclick=(ev)=>{ ev.preventDefault(); SFX.click(); hide(); G.locked=true; openMap(); };
 }
-
 function lose(){
   G.locked=true; SFX.gameOver(); const canRevive=(SAVE.revives||0)>0;
   show(`<h2>아쉬워요!</h2><p>버블이 바닥까지 내려왔어요.<br>스테이지 ${G.stage} · ${G.score.toLocaleString()}점</p>${canRevive?`<button class="btn" id="revive" style="border-color:#ff6b81;color:#ffe0e6;text-shadow:0 0 10px #ff6b81;box-shadow:0 0 16px rgba(255,107,129,.55),inset 0 0 14px rgba(255,107,129,.25);margin-top:14px">❤️ 부활권 사용 (보유 ${SAVE.revives})</button>`:''}<button class="btn" id="go" style="margin-top:${canRevive?10:16}px">다시 하기</button>`);

@@ -3,9 +3,9 @@
 html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#000;}
 body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:700;user-select:none;touch-action:none;}
 
-#app { position: relative; width: 100vw; height: 100dvh; overflow: hidden; }
+#app { position: relative; width: 100vw; height: 100dvh; max-height: 100%; overflow: hidden; }
 
-/* 인트로 화면 */
+/* 인트로 */
 #introScreen { position: absolute; inset: 0; z-index: 200; background: url('assets/intro_bg.png') center / cover no-repeat; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 12vh; }
 #introScreen.hidden { display: none; }
 .intro-start-btn { background: linear-gradient(180deg, #ff8a00, #e52e71); border: 3px solid #ffe08c; border-radius: 999px; padding: 18px 45px; font-family: 'Pretendard', sans-serif; font-weight: 900; font-size: 24px; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.6); box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4); cursor: pointer; animation: pulseStart 1.5s infinite; }
@@ -15,39 +15,35 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
 /* 배경 */
 #bgLayer { position: absolute; inset: 0; z-index: 0; background: url('assets/bg_main.png') center / cover no-repeat; }
 
-/* ✨ 상단 UI 정밀 보정 */
+/* 상단 UI (비율과 높이 강제 고정) */
 #topUI {
   position: absolute; top: 0; left: 0; width: 100%; height: 180px; z-index: 10;
-  background: url('assets/ui_top.png') center top / 100% 100% no-repeat; /* 위쪽을 채우도록 */
-  display: flex; flex-direction: column; justify-content: flex-start;
+  background: url('assets/ui_top.png') center top / 100% 100% no-repeat;
 }
-.top-menu-row { display: flex; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 16px 0; justify-content: flex-start; align-items: center; }
+.top-menu-row { display: flex; gap: 8px; padding: max(8px, env(safe-area-inset-top)) 16px 0; align-items: center; }
 
-/* ✨ 나무 홈에 딱 맞는 글씨 위치와 색상 변경 */
-.top-board-row {
-  position: absolute; bottom: 22px; left: 0; width: 100%;
-  display: flex; align-items: flex-end; justify-content: space-between; padding: 0 16px;
-}
-.side-box { width: 26%; display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: -4px; }
-.center-box { width: 48%; display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 12px; }
+/* ✨ 나무 홈에 딱 맞게 절대 좌표로 배치 (좌, 우, 중앙) */
+.stage-box { position: absolute; left: 5%; top: 56%; width: 22%; text-align: center; }
+.score-box { position: absolute; right: 5%; top: 56%; width: 22%; text-align: center; }
+.target-box { position: absolute; left: 30%; right: 30%; top: 44%; text-align: center; }
 
-/* 밝은 골드/화이트 톤으로 가시성 확보 */
+/* 시안처럼 밝은 골드/화이트 톤으로 가시성 확보 */
 .side-title { color: #f5e3ae; opacity: 0.9; font-size: 13px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.9); margin-bottom: 2px; }
-.big-num { color: #fffdf5; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
-.target-title { font-size: 11px; color: #8c5a2b; margin-bottom: 6px; font-weight: 900; letter-spacing: 1px; }
+.big-num { color: #ffffff; font-size: 26px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
+.target-title { font-size: 12px; color: #8c5a2b; margin-bottom: 8px; font-weight: 900; letter-spacing: 1px; }
 
-/* ✨ 단어 많아지면 좌우 스크롤! (스크롤바는 숨김) */
-.target-scroll-wrapper { width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 2px; }
+/* ✨ 단어 많아지면 밖으로 안 넘치고 스크롤 되게 변경! */
+.target-scroll-wrapper { width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none; padding-bottom: 4px; }
 .target-scroll-wrapper::-webkit-scrollbar { display: none; }
-#targetBar { display: inline-flex; flex-wrap: nowrap; gap: 5px; padding: 0 4px; }
+#targetBar { display: inline-flex; flex-wrap: nowrap; justify-content: center; gap: 6px; padding: 0 8px; min-width: 100%; }
 
-.tchip { background: #fffdf5; border: 2px solid #dcb274; border-radius: 999px; padding: 4px 12px; font-size: 14px; color: #5a3a22; box-shadow: 0 2px 4px rgba(0,0,0,0.3); white-space: nowrap; font-weight: 800; }
+.tchip { background: #fffdf5; border: 2px solid #dcb274; border-radius: 999px; padding: 6px 14px; font-size: 15px; color: #5a3a22; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: 900; }
 .tchip.done { background: #7ba05b; color: #fff; border-color: #55783a; }
 
-.icon-btn { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(145deg,#4a2e1b,#2a1c0a); border: 2px solid #e8c169; color: #f5e3ae; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); cursor: pointer; padding: 0; }
+.icon-btn { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(145deg,#4a2e1b,#2a1c0a); border: 2px solid #e8c169; color: #f5e3ae; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.5); cursor: pointer; }
 .stat-pill { background: rgba(20,12,6,0.85); border: 1.5px solid #a86f2e; border-radius: 999px; padding: 4px 10px; font-size: 13px; color: #f5e3ae; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: 900; }
 
-/* 하단 UI (위치를 살짝 내리고 꽉 채움) */
+/* 하단 UI (바닥에 딱 붙임) */
 #bottomUI {
   position: absolute; bottom: 0; left: 0; width: 100%; height: 110px; z-index: 10;
   background: url('assets/ui_bottom.png') center bottom / 100% 100% no-repeat;
@@ -55,12 +51,14 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
-/* ✨ 찌그러짐 원천 차단: 크기를 강제로 고정 */
+/* ✨ 아이템 찌그러짐 원천 차단: 400% 200% 가 아닌 400% auto 로 비율 완벽 유지! */
 .item-btn {
   flex: 0 0 60px; width: 60px; height: 60px; border-radius: 50%;
   border: none !important; background-color: transparent !important;
   background-image: url('assets/item.png'); 
-  background-size: 400% 200%; background-repeat: no-repeat;
+  background-size: 400% auto; /* 👈 이게 찌그러짐 방지의 핵심입니다! */
+  background-position-y: 0%; /* 탑 줄의 아이콘만 사용 */
+  background-repeat: no-repeat;
   box-shadow: 0 4px 8px rgba(0,0,0,0.5); cursor: pointer; padding: 0;
   transition: transform 0.1s;
 }
@@ -68,10 +66,10 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
 .item-btn[disabled] { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
 .item-btn.active { box-shadow: 0 0 20px rgba(255,215,106,0.9); animation: pulseStart 1s infinite; }
 
-#btnRainbow { background-position: 0% 0%; }
-#btnBomb { background-position: 33.333% 0%; }
-#btnHint { background-position: 66.666% 0%; }
-#btnSwap { background-position: 100% 0%; }
+#btnRainbow { background-position-x: 0%; }
+#btnBomb { background-position-x: 33.333%; }
+#btnHint { background-position-x: 66.666%; }
+#btnSwap { background-position-x: 100%; }
 
 .item-btn .badge {
   position: absolute; right: -2px; bottom: -2px; background: #e52e71; color: #fff;
@@ -79,11 +77,11 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
   border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
-/* 게임 구역 */
-#gameArea { position: absolute; top: 175px; bottom: 110px; left: 0; width: 100%; z-index: 5; }
+/* 게임 캔버스 (상단 나무판과 하단 나무판 사이를 채움) */
+#gameArea { position: absolute; top: 175px; bottom: 100px; left: 0; width: 100%; z-index: 5; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-/* 모달창 */
+/* 모달 및 지도 (기존 동일) */
 .veil{position:absolute;inset:0;display:none;place-items:center;background:rgba(10,5,2,.85);backdrop-filter:blur(4px);z-index:50;}
 .veil.on{display:grid}
 .card{background:linear-gradient(180deg,#3a2717,#2a1c12);border:2px solid #c8962f;border-radius:20px;padding:24px 26px;text-align:center;max-width:84%;box-shadow:0 8px 30px rgba(0,0,0,.8),inset 0 0 20px rgba(200,150,47,.12)}
@@ -92,8 +90,6 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .card p b{color:#fff6da;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .btn{margin-top:16px;background:linear-gradient(180deg,#e8c169,#c8962f);border:2px solid #8a5f22;border-radius:999px;padding:12px 30px;font-family:'Pretendard',sans-serif;font-weight:800;font-size:19px;color:#2a1c0a;text-shadow:0 1px 1px rgba(255,255,255,.3);box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 2px rgba(255,255,255,.4); cursor:pointer;}
 .btn:active{transform:translateY(3px)}
-
-/* 지도 */
 #mapVeil{position:absolute;inset:0;display:none;z-index:100;background:#1c2b1c}
 #mapVeil.on{display:block}
 #mapScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:#1c2b1c}

@@ -13,15 +13,13 @@
 <body>
 
 <div id="app">
-  <!-- 인트로(스플래시) 화면 -->
   <div id="introScreen">
     <button class="intro-start-btn" id="btnStartAdventure">🚀 모험 시작하기</button>
   </div>
 
-  <!-- 전체 배경 -->
   <div id="bgLayer"></div>
 
-  <!-- 상단 UI (나무판) -->
+  <!-- ✨ 상단 UI: 홈에 맞추기 위해 3개의 박스로 분리! -->
   <div id="topUI">
     <div class="top-menu-row">
       <button class="icon-btn" id="btnMenu">❚❚</button>
@@ -30,32 +28,28 @@
       <div class="stat-pill">💰<b id="uiCoins">0</b></div>
     </div>
     
-    <!-- ✨ 위치를 조정한 상단 정보창 -->
-    <div class="top-board-row">
-      <div class="side-box">
-        <div class="side-title">스테이지</div>
-        <div id="uiStage" class="big-num">1</div>
+    <div class="stage-box">
+      <div class="side-title">스테이지</div>
+      <div id="uiStage" class="big-num">1</div>
+    </div>
+    
+    <div class="target-box">
+      <div class="target-title">목표 단어</div>
+      <div class="target-scroll-wrapper">
+        <div id="targetBar"></div>
       </div>
-      <div class="center-box">
-        <div class="target-title">목표 단어</div>
-        <!-- ✨ 단어가 많아지면 좌우로 스크롤 됩니다! -->
-        <div class="target-scroll-wrapper">
-          <div id="targetBar"></div>
-        </div>
-      </div>
-      <div class="side-box">
-        <div class="side-title">점수</div>
-        <div id="uiScoreBig" class="big-num">0</div>
-      </div>
+    </div>
+    
+    <div class="score-box">
+      <div class="side-title">점수</div>
+      <div id="uiScoreBig" class="big-num">0</div>
     </div>
   </div>
 
-  <!-- 게임 구역 -->
   <div id="gameArea">
     <canvas id="cv"></canvas>
   </div>
 
-  <!-- 하단 UI (아이템 패널) -->
   <div id="bottomUI">
     <button class="item-btn" id="btnHint"><div class="badge" id="uiHint">3</div></button>
     <button class="item-btn" id="btnSwap"><div class="badge" id="uiSwap">3</div></button>
@@ -63,7 +57,6 @@
     <button class="item-btn" id="btnRainbow"><div class="badge" id="uiRainbow">2</div></button>
   </div>
 
-  <!-- 팝업/지도 -->
   <div class="veil" id="veil"><div class="card" id="card"></div></div>
   <div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
 </div>
