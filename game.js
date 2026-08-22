@@ -435,10 +435,21 @@ function lose(){
   show(`<h2>아쉬워요!</h2><p>버블이 바닥까지 내려왔어요.<br>스테이지 ${G.stage} · ${G.score.toLocaleString()}점</p>${canRevive?`<button class="btn" id="revive" style="border-color:#ff6b81;color:#ffe0e6;text-shadow:0 0 10px #ff6b81;box-shadow:0 0 16px rgba(255,107,129,.55),inset 0 0 14px rgba(255,107,129,.25);margin-top:14px">❤️ 부활권 사용 (보유 ${SAVE.revives})</button>`:''}<button class="btn" id="go" style="margin-top:${canRevive?10:16}px">다시 하기</button>`);
   if(canRevive){ const rev=document.getElementById('revive'); if(rev) rev.onclick=()=>{ SFX.buy(); SAVE.revives--; saveGame(true); hide(); G.locked=false; for(let i=0;i<2&&G.grid.length>0;i++)G.grid.pop(); BOARDLAYER=null; toast('❤️ 부활! 아래 두 줄이 사라졌어요'); checkState(); syncUI(); }; } const goBtn=document.getElementById('go'); if(goBtn) goBtn.onclick=()=>{if(!spendLife())return;hide();G.locked=false;G.score=0;buildStage();};
 }
-function intro(){
-  // 낡은 팝업창 대신, 우리가 만든 전체화면 인트로를 보여줍니다!
+function intro() {
+  // 1. 인트로 화면 띄우기
   const introSc = document.getElementById('introScreen');
-  if(introSc) introSc.classList.remove('hidden');
+  if (introSc) introSc.classList.remove('hidden');
+
+  // 2. 모험 시작 버튼 클릭 시 작동할 내용 한 번에 묶기
+  const btnStartAdv = document.getElementById('btnStartAdventure');
+  if (btnStartAdv) {
+    btnStartAdv.onclick = () => {
+      SFX.click(); // 버튼 효과음 재생
+      if (introSc) introSc.classList.add('hidden'); // 인트로 화면 숨기기
+      G.mode = 'theme'; // 모험 모드 설정
+      openMap(); // 지도 쫙 열기!
+    };
+  }
 }
 
 let _mapLivesTimer=null;
