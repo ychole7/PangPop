@@ -30,19 +30,22 @@
       <div class="stat-pill">💰<b id="uiCoins">0</b></div>
     </div>
     
-    <!-- ✨ 나무 홈에 딱 맞춘 3등분 정밀 레이아웃 -->
+    <!-- ✨ 위치를 조정한 상단 정보창 -->
     <div class="top-board-row">
       <div class="side-box">
         <div class="side-title">스테이지</div>
-        <b id="uiStage" class="big-num">1</b>
+        <div id="uiStage" class="big-num">1</div>
       </div>
       <div class="center-box">
         <div class="target-title">목표 단어</div>
-        <div id="targetBar"></div>
+        <!-- ✨ 단어가 많아지면 좌우로 스크롤 됩니다! -->
+        <div class="target-scroll-wrapper">
+          <div id="targetBar"></div>
+        </div>
       </div>
       <div class="side-box">
         <div class="side-title">점수</div>
-        <b id="uiScoreBig" class="big-num">0</b>
+        <div id="uiScoreBig" class="big-num">0</div>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 크래시 완전 해결 & 최종 에셋 엔진
+   낱글자 팡팡! — 최종 반응형 & 구슬/아이템 비율 고정 엔진
    ══════════════════════════════════════════ */
 
 const SAVE_KEY='pangpop_save_v1';
@@ -56,7 +56,10 @@ function resize(){
   
   DPR = Math.min(window.devicePixelRatio||1,2.5);
   W = box.width; H = box.height;
+  
+  // ✨ CSS에 의한 강제 찌그러짐 방지! 캔버스의 논리/물리 픽셀을 명시적으로 고정
   cv.width = W * DPR; cv.height = H * DPR;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
   BX = W * 0.05; 
@@ -306,15 +309,18 @@ const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_
 
 function lighten(hex,amt){ const n=parseInt(hex.slice(1),16); return `rgb(${Math.min(255,((n>>16)&255)+amt*2)|0},${Math.min(255,((n>>8)&255)+amt*2)|0},${Math.min(255,(n&255)+amt*2)|0})`; }
 
+// ✨ 찌그러짐 방지! Math.min을 써서 구슬 이미지를 정확한 1:1 정사각형으로 잘라냅니다.
 function drawBubbleRaw(x,y,r,s,col,glow,special){
   const rr = r * 0.94;
   const img = ASSETS.balls;
   
   if(img && !special) {
     const sw = img.width / 5, sh = img.height / 2;
+    const size = Math.min(sw, sh); // 정확한 정사각형 영역만 추출
     const cIdx = (col || 0) % 10;
-    const sx = (cIdx % 5) * sw, sy = Math.floor(cIdx / 5) * sh;
-    ctx.drawImage(img, sx, sy, sw, sh, x - rr, y - rr, rr * 2, rr * 2);
+    const sx = (cIdx % 5) * sw + (sw - size)/2;
+    const sy = Math.floor(cIdx / 5) * sh + (sh - size)/2;
+    ctx.drawImage(img, sx, sy, size, size, x - rr, y - rr, rr * 2, rr * 2);
   } else {
     let [c1,c2]=colByIdx(col||0); if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; } else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
     ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip(); const g=ctx.createRadialGradient(x-rr*.32,y-rr*.38,rr*.12, x,y,rr*1.15); g.addColorStop(0, lighten(c1,18)); g.addColorStop(.45, c1); g.addColorStop(1, c2); ctx.fillStyle=g; ctx.fillRect(x-rr,y-rr,rr*2,rr*2); ctx.restore();
@@ -342,7 +348,7 @@ function drawShooter(now){
   if(img) {
     const w = R * 6.5; 
     const h = w * (img.height / img.width);
-    ctx.drawImage(img, cx0 - w/2, G.shooterY - h*0.15, w, h); 
+    ctx.drawImage(img, cx0 - w/2, G.shooterY - h*0.2, w, h); 
   }
   
   if(!G.fly && G.cur) { 
@@ -449,7 +455,6 @@ function wireShop(){ if(card)card.querySelectorAll('button[data-id]').forEach(bt
 function calcStars(){ const goal = G.mode==='theme' ? G.targets.length : G.freeGoal; const ratio = Math.max(goal, Math.ceil(goal*1.3))/Math.max(1, G.shots); if(ratio>=0.85) return 3; if(ratio>=0.55) return 2; return 1; }
 function starRow(n){ let out=''; for(let i=0;i<3;i++) out+= i<n ? '<span style="color:#ffe08c;text-shadow:0 0 12px #ffb15c">★</span>' : '<span style="color:rgba(255,255,255,.25)">★</span>'; return `<div style="font-size:34px;letter-spacing:6px;margin:8px 0">${out}</div>`; }
 
-// ✨ 여기서부터 완전히 복구된 게임 핵심 함수들입니다!
 function win(){
   G.locked=true;G.score+=1000; const stars=calcStars(), isMilestone=G.mode==='theme'&&G.stage%MILESTONE_EVERY===0, isFinal=G.mode==='theme'&&G.stage===MAX_STAGE, milestoneBonus=isFinal?1000:(isMilestone?200:0), coinGain=30+G.stage*4+stars*15+milestoneBonus; SAVE.coins=(SAVE.coins||0)+coinGain;
   if(G.mode==='theme'){ if(!SAVE.theme.levelStars) SAVE.theme.levelStars={}; const prev=SAVE.theme.levelStars[G.stage]||0; if(stars>prev){ SAVE.totalStars=(SAVE.totalStars||0)+(stars-prev); SAVE.theme.levelStars[G.stage]=stars; } }else{ SAVE.totalStars=(SAVE.totalStars||0)+stars; } saveGame(true); SFX.stageClear(); addShake(8+stars*2); flash(0.3);
