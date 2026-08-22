@@ -13,10 +13,15 @@
 <body>
 
 <div id="app">
-  <!-- 1. 화면 100%를 꽉 채우는 순수 배경 (어떤 기기든 완벽 대응) -->
+  <!-- 인트로(스플래시) 화면 -->
+  <div id="introScreen">
+    <button class="intro-start-btn" id="btnStartAdventure">🚀 모험 시작하기</button>
+  </div>
+
+  <!-- 전체 배경 -->
   <div id="bgLayer"></div>
 
-  <!-- 2. 화면 맨 위에 딱 붙는 상단 UI (지붕 패널) -->
+  <!-- 상단 UI (나무판) -->
   <div id="topUI">
     <div class="top-menu-row">
       <button class="icon-btn" id="btnMenu">❚❚</button>
@@ -34,27 +39,24 @@
     </div>
   </div>
 
-  <!-- 3. 버블이 날아다니는 진짜 게임 구역 (상하단 사이 남는 공간 100% 활용) -->
+  <!-- 게임 구역 -->
   <div id="gameArea">
     <canvas id="cv"></canvas>
   </div>
 
-  <!-- 4. 화면 맨 아래 딱 붙는 하단 UI (아이템 패널) -->
+  <!-- 하단 UI (아이템 패널) -->
   <div id="bottomUI">
-    <button class="item-btn" id="btnHint">💡<b id="uiHint">3</b></button>
-    <button class="item-btn" id="btnSwap">🔄<b id="uiSwap">3</b></button>
-    <button class="item-btn" id="btnBomb">💣<b id="uiBomb">2</b></button>
-    <button class="item-btn" id="btnRainbow">🌈<b id="uiRainbow">2</b></button>
+    <!-- ✨ 글씨 대신 item.jpg 이미지가 들어가도록 변경 -->
+    <button class="item-btn" id="btnHint"><div class="badge" id="uiHint">3</div></button>
+    <button class="item-btn" id="btnSwap"><div class="badge" id="uiSwap">3</div></button>
+    <button class="item-btn" id="btnBomb"><div class="badge" id="uiBomb">2</div></button>
+    <button class="item-btn" id="btnRainbow"><div class="badge" id="uiRainbow">2</div></button>
   </div>
 
-  <!-- 지도 및 팝업창 모달 -->
+  <!-- 팝업/지도 -->
   <div class="veil" id="veil"><div class="card" id="card"></div></div>
   <div id="mapVeil"><div id="mapScroll"></div><div id="mapLives"></div><div id="seasonTabs"></div></div>
 </div>
-
-<div id="introScreen">
-    <button class="intro-start-btn" id="btnStartAdventure">🚀 모험 시작하기</button>
-  </div>
 
 <script src="game.js"></script>
 </body>

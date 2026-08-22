@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 완벽 분리형 레이아웃 엔진 (새 시안)
+   낱글자 팡팡! — 커스텀 에셋 & 정밀 싱크 엔진
    ══════════════════════════════════════════ */
 
 const DICT_BY_CAT = {
@@ -18,11 +18,7 @@ for (const c of CATS) for (const w of DICT_BY_CAT[c]) if (w.length>=2) DICT.set(
 for (const w of BONUS_WORDS) DICT.set(w,'보너스');
 for (const w of GENERIC_WORDS) if (w.length>=2 && !DICT.has(w)) DICT.set(w,'생활');
 
-const PALETTE = [['#8fc98a','#4f8a52'],['#e8a6c2','#c96f95'],['#8fb8d8','#4f7fa8'],['#e8c27a','#b8863f'],['#e0dcd0','#b0a890'],['#b39ad6','#7c5ba8']];
-const NCOL=6;
-function colByIdx(i){ return PALETTE[((i%NCOL)+NCOL)%NCOL]; }
-function colorOf(b){ if(b&&typeof b==='object'&&typeof b.col==='number') return colByIdx(b.col); const ch=(typeof b==='string')?b:(b&&b.s)||''; let h=0; for(let i=0;i<ch.length;i++) h=(h*31+ch.charCodeAt(i))>>>0; return PALETTE[h%PALETTE.length]; }
-function randCol(){ return Math.floor(Math.random()*NCOL); }
+function randCol(){ return Math.floor(Math.random()*10); } // 구슬 종류 10개로 증가
 
 let cv, ctx;
 let W=0,H=0,R=0,ROWH=0,DPR=1, BX=0,BY=0,BW=0,BH=0;
@@ -48,14 +44,14 @@ function resize(){
   cv.width = W * DPR; cv.height = H * DPR;
   ctx.setTransform(DPR,0,0,DPR,0,0);
 
-  // 화면 양옆 5% 여백 확보
   BX = W * 0.05; 
   BW = W * 0.90; 
   R = BW / (COLS * 2);
   
-  // 게임 에어리어 내부 높이에 맞춰 계산
-  BY = R * 1.5; // 천장(상단UI 아래)에서 살짝 띄움
-  G.shooterY = H - R * 3.5; // 바닥(하단UI 위)에서 대포 크기만큼 띄움
+  BY = 10 + R; // 상단 UI 아래에서 시작
+  
+  // ✨ 대포 입구가 될 Y 좌표 (하단에서 대포 크기만큼 띄움)
+  G.shooterY = H - (R * 4.5); 
   BH = G.shooterY - BY;
   
   ROWH = R * 1.72;
@@ -190,7 +186,7 @@ function newCur(){
 function shoot(angle){
   if(G.fly||G.locked)return; const sp=R*0.62, item=G.activeItem;
   if(item==='bomb') G.bombs--; if(item==='rainbow') G.rainbows--; G.activeItem=null;
-  const p0=pipePos(); G.fly={x:p0.x,y:p0.y,vx:Math.cos(angle)*sp,vy:Math.sin(angle)*sp,s:G.cur.s,col:G.cur.col,item};
+  G.fly={x:W/2, y:G.shooterY, vx:Math.cos(angle)*sp, vy:Math.sin(angle)*sp, s:G.cur.s, col:G.cur.col, item};
   G.cur=G.queue.shift(); G.queue.push(newCur()); G.hintCells=null; G.trajA=null; G.shots++; syncUI();
 }
 function hitsBubble(x,y){
@@ -210,7 +206,7 @@ function explodeAt(c,r){
   const cells=[[c,r],...nbrs(c,r).filter(([nc,nr])=>at(nc,nr))]; G.locked=true; const t0=performance.now();
   cells.forEach(([cc,rr])=>{ if(G.grid[rr]&&G.grid[rr][cc]) G.grid[rr][cc].glow=t0; });
   setTimeout(()=>{
-    let n=0; for(const [cc,rr] of cells){ if(!G.grid[rr]||!G.grid[rr][cc])continue; const col=colorOf(G.grid[rr][cc])[0]; burst(cx(cc,rr),cy(rr),col); addWave(cx(cc,rr),cy(rr),col,R*3); G.grid[rr][cc]=null; n++; }
+    let n=0; for(const [cc,rr] of cells){ if(!G.grid[rr]||!G.grid[rr][cc])continue; burst(cx(cc,rr),cy(rr),'#fff'); addWave(cx(cc,rr),cy(rr),'#fff',R*3); G.grid[rr][cc]=null; n++; }
     addShake(10); flash(0.22); G.score+=n*80; G.combo=0; G.dryShots=0; toast('펑! +'+(n*80)); dropFloaters(); G.locked=false; checkState(); syncUI();
   },260);
 }
@@ -221,7 +217,7 @@ function settle(f){
   G.fly=null; if(!best)return; const [c,r]=best; while(G.grid.length<=r) G.grid.push(new Array(cellsIn(G.grid.length)).fill(null));
   if(f.item==='bomb'){ G.grid[r][c]={s:f.s,col:f.col,born:performance.now()}; SFX.stageClear(); explodeAt(c,r); return; }
   let s=f.s; if(f.item==='rainbow'){ let bSyl=null; for(const ss of G.pool){ const hit=findWord(c,r,ss); if(hit && (!bSyl || hit.word.length>bSyl.word.length)) bSyl={s:ss,...hit}; } if(bSyl) s=bSyl.s; }
-  G.grid[r][c]={s,col:f.col,born:performance.now()}; addShake(1.5); addWave(cx(c,r),cy(r),colorOf(G.grid[r][c])[0],R*1.4); resolve(c,r);
+  G.grid[r][c]={s,col:f.col,born:performance.now()}; addShake(1.5); addWave(cx(c,r),cy(r),'#fff',R*1.4); resolve(c,r);
 }
 
 function findWordAt(c0,r0){
@@ -254,9 +250,9 @@ function resolve(c,r){
     setTimeout(()=>{
       let goldHit=0; const bombCells=[];
       for(const [cc,rr] of word.cells){ if(!G.grid[rr]||!G.grid[rr][cc])continue; const sp=G.grid[rr][cc].special; if(sp==='gold')goldHit++; if(sp==='bomb')bombCells.push([cc,rr]); burst(cx(cc,rr),cy(rr),'#ffe08c'); G.grid[rr][cc]=null; }
-      let chain=0; for(const [wc,wr] of word.cells) for(const [nc,nr] of nbrs(wc,wr)) if(G.grid[nr]&&G.grid[nr][nc]){ burst(cx(nc,nr),cy(nr),colorOf(G.grid[nr][nc])[0]); G.grid[nr][nc]=null; chain++; } G.score+=chain*30;
+      let chain=0; for(const [wc,wr] of word.cells) for(const [nc,nr] of nbrs(wc,wr)) if(G.grid[nr]&&G.grid[nr][nc]){ burst(cx(nc,nr),cy(nr),'#fff'); G.grid[nr][nc]=null; chain++; } G.score+=chain*30;
       if(goldHit){ const gb=goldHit*300; G.score+=gb; SAVE.coins=(SAVE.coins||0)+goldHit*10; addPop(px,py-R*1.6,'✨ 황금 +'+gb,'#ffe08c'); flash(0.2); }
-      for(const [bc,br] of bombCells){ for(const [nc,nr] of nbrs(bc,br)) if(G.grid[nr]&&G.grid[nr][nc]){ burst(cx(nc,nr),cy(nr),colorOf(G.grid[nr][nc])[0]); G.grid[nr][nc]=null; G.score+=60; } addWave(cx(bc,br),cy(br),'#ff9a5c',R*3); addShake(8); }
+      for(const [bc,br] of bombCells){ for(const [nc,nr] of nbrs(bc,br)) if(G.grid[nr]&&G.grid[nr][nc]){ burst(cx(nc,nr),cy(nr),'#fff'); G.grid[nr][nc]=null; G.score+=60; } addWave(cx(bc,br),cy(br),'#ff9a5c',R*3); addShake(8); }
       dropFloaters(); G.locked=false; checkState(); syncUI();
     },420); return;
   }
@@ -269,7 +265,7 @@ function resolve(c,r){
     let px=group.reduce((a,[c,r])=>a+cx(c,r),0)/group.length, py=group.reduce((a,[c,r])=>a+cy(r),0)/group.length;
     addPop(px,py,'+'+pts,'#fff6d0'); if(combo>=2) addPop(px,py-R*0.9,'콤보 x'+combo,'#ff9fd6');
     G.locked=true; const t0=performance.now(); for(const [cc,rr] of group) if(G.grid[rr]&&G.grid[rr][cc]) G.grid[rr][cc].glow=t0;
-    setTimeout(()=>{ for(const [cc,rr] of group){ if(!G.grid[rr]||!G.grid[rr][cc])continue; burst(cx(cc,rr),cy(rr),colorOf(G.grid[rr][cc])[0]); addWave(cx(cc,rr),cy(rr),colorOf(G.grid[rr][cc])[0]); G.grid[rr][cc]=null; } dropFloaters(); G.locked=false; checkState(); syncUI(); },300); return;
+    setTimeout(()=>{ for(const [cc,rr] of group){ if(!G.grid[rr]||!G.grid[rr][cc])continue; burst(cx(cc,rr),cy(rr),'#fff'); addWave(cx(cc,rr),cy(rr),'#fff'); G.grid[rr][cc]=null; } dropFloaters(); G.locked=false; checkState(); syncUI(); },300); return;
   }
   G.combo=0; G.dryShots++; SFX.miss(); if(G.grid[r]&&G.grid[r][c]) G.grid[r][c].nope=performance.now(); addShake(2);
   const left=5-G.dryShots; if(left>0 && left<=2) addPop(cx(c,r), cy(r)+R*0.7, left+'번 더 실패 시 새 줄', '#ffb15c');
@@ -278,7 +274,7 @@ function resolve(c,r){
 function dropFloaters(){
   const keep=new Set(),stack=[]; if(G.grid[0])for(let c=0;c<cellsIn(0);c++) if(G.grid[0][c]){keep.add('0,'+c);stack.push([c,0]);}
   while(stack.length){ const [c,r]=stack.pop(); for(const [nc,nr] of nbrs(c,r)){ if(!at(nc,nr))continue; const k=nr+','+nc; if(keep.has(k))continue; keep.add(k); stack.push([nc,nr]); } }
-  for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++){ if(!at(c,r))continue; if(!keep.has(r+','+c)){ burst(cx(c,r),cy(r),colorOf(G.grid[r][c])[0]); G.score+=50; G.grid[r][c]=null; } }
+  for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++){ if(!at(c,r))continue; if(!keep.has(r+','+c)){ burst(cx(c,r),cy(r),'#fff'); G.score+=50; G.grid[r][c]=null; } }
 }
 function checkState(){
   let count=0,lowest=-1; for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++) if(at(c,r)){count++;lowest=Math.max(lowest,r);}
@@ -294,35 +290,72 @@ function soundOn(){ return SAVE.soundOn!==false; }
 function tone(freq0,freq1,dur,gain,type,delay){ if(!soundOn())return; const ax=getActx(); if(!ax)return; try{ const t0=ax.currentTime+(delay||0); const o=ax.createOscillator(),g=ax.createGain(); o.type=type||'triangle'; o.frequency.setValueAtTime(freq0,t0); if(freq1) o.frequency.exponentialRampToValueAtTime(freq1,t0+dur*0.55); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(gain,t0+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur); o.connect(g); g.connect(ax.destination); o.start(t0); o.stop(t0+dur+0.02); }catch(e){} }
 const SFX={ pop(){ tone(520+Math.random()*260,880,0.17,0.07,'triangle'); }, click(){ tone(700,900,0.06,0.05,'square'); }, wordComplete(combo,bonus){ const base=440+Math.min(combo,5)*40; const ratios=bonus?[1,1.26,1.5,2]:[1,1.26,1.5]; ratios.forEach((r,i)=>tone(base*r,base*r*1.15,0.22,0.09,'triangle',i*0.045)); }, miss(){ tone(260,180,0.14,0.045,'sine'); }, rowAdd(){ tone(180,120,0.3,0.06,'sawtooth'); }, stageClear(){ [0,1,2,3].forEach(i=>tone(523.25*Math.pow(2,i/12*4), null, 0.28,0.08,'triangle',i*0.11)); }, gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); }, buy(){ tone(700,1100,0.14,0.07,'triangle'); tone(1050,1400,0.16,0.06,'triangle',0.06); } };
 
-const ASSET_SRC={ cannon:'assets/cannon.png' };
+// ✨ 대포, 구슬, 아이템 이미지를 모두 불러옵니다.
+const ASSET_SRC={ cannon:'assets/canon.png', balls:'assets/ball.jpg', items:'assets/item.jpg' };
 const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{ const i=new Image(); i.onload=()=>{ASSETS[k]=i;res();}; i.onerror=()=>{res();}; i.src=src; }))); }
 
-function neon(col,blur,w,fn){ ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.shadowColor=col; ctx.shadowBlur=blur*1.6; fn(); ctx.shadowBlur=blur*.7; fn(); ctx.restore(); }
 function drawBubbleRaw(x,y,r,s,col,glow,special){
-  let [c1,c2]=colByIdx(col||0); if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; } else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
-  const rr=r*.94;
-  ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip(); const g=ctx.createRadialGradient(x-rr*.32,y-rr*.38,rr*.12, x,y,rr*1.15); g.addColorStop(0, lighten(c1,18)); g.addColorStop(.45, c1); g.addColorStop(1, c2); ctx.fillStyle=g; ctx.fillRect(x-rr,y-rr,rr*2,rr*2); ctx.restore();
-  ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.strokeStyle= glow ? '#fff0c0' : '#c9a04a'; ctx.lineWidth=Math.max(1.2,r*.055); ctx.globalAlpha=.85; ctx.stroke(); ctx.restore();
+  const rr = r * 0.94;
+  const img = ASSETS.balls;
+  
+  // ✨ ball.jpg 에서 5x2 그리드로 잘라서 구슬 그리기
+  if(img && !special) {
+    const sw = img.width / 5, sh = img.height / 2;
+    const cIdx = (col || 0) % 10;
+    const sx = (cIdx % 5) * sw, sy = Math.floor(cIdx / 5) * sh;
+    ctx.drawImage(img, sx, sy, sw, sh, x - rr, y - rr, rr * 2, rr * 2);
+  } else {
+    // 특수 구슬이나 이미지가 없을 때의 예비용 그리기
+    let [c1,c2]=colByIdx(col||0); if(special==='gold'){ c1='#ffe9a8'; c2='#c8962f'; } else if(special==='bomb'){ c1='#e8a878'; c2='#a85f2f'; }
+    ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.clip(); const g=ctx.createRadialGradient(x-rr*.32,y-rr*.38,rr*.12, x,y,rr*1.15); g.addColorStop(0, lighten(c1,18)); g.addColorStop(.45, c1); g.addColorStop(1, c2); ctx.fillStyle=g; ctx.fillRect(x-rr,y-rr,rr*2,rr*2); ctx.restore();
+  }
+
+  // 테두리 빛 효과
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.strokeStyle= glow ? '#fff0c0' : 'rgba(0,0,0,0.2)'; ctx.lineWidth=Math.max(1.2,r*.055); ctx.globalAlpha=.85; ctx.stroke(); ctx.restore();
   if(glow){ ctx.save(); ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.strokeStyle='#ffe9a0'; ctx.shadowColor='#ffd86f'; ctx.shadowBlur=r*.5; ctx.lineWidth=Math.max(1.2,r*.04); ctx.stroke(); ctx.restore(); }
-  ctx.save(); ctx.font=`800 ${r*1.0}px 'Pretendard', sans-serif`; ctx.textAlign='center';ctx.textBaseline='middle'; const ty=y+r*.06; ctx.shadowColor='rgba(40,24,10,.55)'; ctx.shadowBlur=r*.14; ctx.shadowOffsetY=r*.07; ctx.fillStyle='#fffaf0'; ctx.fillText(s,x,ty); ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-  if(special==='gold'){ ctx.strokeStyle='#fff3b0'; ctx.lineWidth=r*.09; ctx.shadowColor='#ffe08c'; ctx.shadowBlur=r*.6; ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.stroke(); ctx.shadowBlur=0; ctx.fillStyle='#fff8d8'; [[0.5,-0.7],[-0.6,0.4],[0.7,0.5],[-0.4,-0.5]].forEach(([dx,dy],i)=>{ const s2=r*0.10*(0.7+0.5*Math.sin(performance.now()/200+i)); ctx.beginPath(); ctx.arc(x+dx*r*.7,y+dy*r*.7,s2,0,7); ctx.fill(); }); }
-  else if(special==='bomb'){ ctx.font=`${r*.55}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣', x+r*.5, y-r*.5); } ctx.restore();
+  
+  // ✨ 구슬 위 글씨 (잘 보이게 그림자 추가)
+  ctx.save(); ctx.font=`800 ${r*1.0}px 'Pretendard', sans-serif`; ctx.textAlign='center';ctx.textBaseline='middle'; 
+  const ty=y+r*.06; 
+  ctx.shadowColor='rgba(0,0,0,0.85)'; ctx.shadowBlur=r*.18; ctx.shadowOffsetY=r*.05; 
+  ctx.fillStyle='#ffffff'; ctx.fillText(s,x,ty); 
+  ctx.restore();
+
+  if(special==='gold'){ ctx.save(); ctx.strokeStyle='#fff3b0'; ctx.lineWidth=r*.09; ctx.shadowColor='#ffe08c'; ctx.shadowBlur=r*.6; ctx.beginPath(); ctx.arc(x,y,rr,0,7); ctx.stroke(); ctx.shadowBlur=0; ctx.fillStyle='#fff8d8'; [[0.5,-0.7],[-0.6,0.4],[0.7,0.5],[-0.4,-0.5]].forEach(([dx,dy],i)=>{ const s2=r*0.10*(0.7+0.5*Math.sin(performance.now()/200+i)); ctx.beginPath(); ctx.arc(x+dx*r*.7,y+dy*r*.7,s2,0,7); ctx.fill(); }); ctx.restore(); }
+  else if(special==='bomb'){ ctx.save(); ctx.font=`${r*.55}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣', x+r*.5, y-r*.5); ctx.restore(); }
 }
-function lighten(hex,amt){ const n=parseInt(hex.slice(1),16); return `rgb(${Math.min(255,((n>>16)&255)+amt*2)|0},${Math.min(255,((n>>8)&255)+amt*2)|0},${Math.min(255,(n&255)+amt*2)|0})`; }
+
 const SPR=new Map(); let FONTS_READY=false;
 function sprite(s,r,glow,col){ const key=s+'|'+r+'|'+(glow?1:0)+'|'+(col||0); let c=SPR.get(key); if(c)return c; const pad=Math.ceil(r*(glow?2.0:1.55)), size=pad*2; c=document.createElement('canvas'); c.width=Math.ceil(size*DPR); c.height=Math.ceil(size*DPR); const g2=c.getContext('2d'); g2.setTransform(DPR,0,0,DPR,0,0); const keep=ctx; ctx=g2; drawBubbleRaw(pad,pad,r,s,col,glow); ctx=keep; c._pad=pad; if(FONTS_READY){ if(SPR.size>320)SPR.clear(); SPR.set(key,c); } return c; }
 function bubble(x,y,r,s,col,glow,special){ if(special){ drawBubbleRaw(x,y,r,s,col,glow,special); return; } r=Math.round(r*2)/2; const c=sprite(s,r,glow,col); ctx.drawImage(c,x-c._pad,y-c._pad,c._pad*2,c._pad*2); }
 
-function pipePos(){ const cx0=W/2, sy=G.shooterY, img=ASSETS.cannon; if(!img) return {x:cx0,y:sy}; const w=R*4.8, h=w*(img.height/img.width); return {x: cx0-w/2+w*0.52, y: sy+R*0.0+h*-0.05}; }
 function drawShooter(now){
-  const cx0=W/2, sy=G.shooterY, img=ASSETS.cannon, p=pipePos();
-  if(img){ const w=R*5.5, h=w*(img.height/img.width); ctx.drawImage(img, cx0-w/2, sy-h*0.3, w, h); }
-  if(!G.fly&&G.cur){ const bob=Math.sin(now/420)*R*.05; bubble(cx0,sy+bob,R*.94,G.cur.s,G.cur.col); if(G.activeItem){ ctx.save(); ctx.font=`${R*.62}px sans-serif`; ctx.textAlign='center';ctx.textBaseline='middle'; ctx.fillText(G.activeItem==='bomb'?'💣':'🌈', cx0+R*0.78, sy+bob-R*0.78); ctx.restore(); } }
+  const cx0 = W / 2;
+  const img = ASSETS.cannon;
+  
+  if(img) {
+    const w = R * 6.5; 
+    const h = w * (img.height / img.width);
+    
+    // ✨ 대포 입구(G.shooterY)에 맞춰서 대포 본체를 그립니다. (입구가 위에서 약 15% 지점)
+    ctx.drawImage(img, cx0 - w/2, G.shooterY - h*0.15, w, h); 
+  }
+  
+  // ✨ 대포 입구(G.shooterY)에 장전된 구슬 그리기
+  if(!G.fly && G.cur) { 
+    const bob = Math.sin(now/420) * R * 0.05; 
+    bubble(cx0, G.shooterY + bob, R*0.94, G.cur.s, G.cur.col); 
+    
+    if(G.activeItem){ ctx.save(); ctx.font=`${R*.62}px sans-serif`; ctx.textAlign='center';ctx.textBaseline='middle'; ctx.fillText(G.activeItem==='bomb'?'💣':'🌈', cx0+R*0.78, G.shooterY+bob-R*0.78); ctx.restore(); } 
+  }
 }
 function drawQueue(){
-  if(!G.queue.length)return; const cx0=W/2, sy=G.shooterY, x=cx0 + R*2.8, y=sy + R*0.3, r=R*.82;
+  if(!G.queue.length)return; 
+  // ✨ 다음 구슬 위치를 대포 우측 살짝 아래로 자연스럽게 이동
+  const x = W/2 + R*3.2, y = G.shooterY + R*1.2, r = R*0.75;
   ctx.save(); ctx.font=`800 ${R*.48}px 'Pretendard', sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle'; ctx.fillStyle='#ffffff';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=6; ctx.fillText('다음: '+G.queue[0].s,x,y-r*1.6); ctx.restore();
-  neon('#c8962f',6,2,()=>{ctx.beginPath();ctx.arc(x,y,r*1.12,0,7);ctx.stroke();}); bubble(x,y,r*.92,G.queue[0].s,G.queue[0].col);
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,r*1.1,0,7); ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fill(); ctx.restore();
+  bubble(x,y,r*0.92,G.queue[0].s,G.queue[0].col);
 }
 function draw(now){
   ctx.clearRect(0,0,W,H); ctx.save(); if(G.shake>0.3){ ctx.translate((Math.random()-0.5)*G.shake, (Math.random()-0.5)*G.shake); }
@@ -361,14 +394,6 @@ function syncMuteBtn(){ const b=document.getElementById('btnMute'); if(b) b.text
 window.addEventListener('load', () => {
   const btnMenu=document.getElementById('btnMenu'); if(btnMenu) btnMenu.onclick=()=>{
     if(veil.classList.contains('on'))return; G.locked=true;
-// 인트로 화면의 모험 시작 버튼 클릭 이벤트
-  const btnStartAdv = document.getElementById('btnStartAdventure');
-  if(btnStartAdv) btnStartAdv.onclick = () => {
-    SFX.click();
-    document.getElementById('introScreen').classList.add('hidden'); // 인트로 화면 숨기기
-    G.mode = 'theme';
-    openMap(); // 지도로 넘어가기!
-  };
     const info = `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p> <div>${G.targets.map(w=>`<span class="tchip" style="margin:2px;${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
     show(`<h2>메뉴</h2>${info}<button class="btn" id="go">이어서 하기</button><p style="margin-top:12px;font-size:14px"><a href="#" id="switch" style="color:#d9a94a">🗺️ 지도로 이동</a> &nbsp;·&nbsp; <a href="#" id="restart" style="color:#ff9a5c">이 스테이지 재시작</a></p><button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 8px #ffd86f;box-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
     document.getElementById('go').onclick=()=>{hide();G.locked=false;}; document.getElementById('switch').onclick=ev=>{ev.preventDefault();hide();openMap();}; document.getElementById('restart').onclick=ev=>{ev.preventDefault();if(!spendLife())return;hide();startGame(false, G.stage);}; document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
@@ -435,19 +460,18 @@ function lose(){
   show(`<h2>아쉬워요!</h2><p>버블이 바닥까지 내려왔어요.<br>스테이지 ${G.stage} · ${G.score.toLocaleString()}점</p>${canRevive?`<button class="btn" id="revive" style="border-color:#ff6b81;color:#ffe0e6;text-shadow:0 0 10px #ff6b81;box-shadow:0 0 16px rgba(255,107,129,.55),inset 0 0 14px rgba(255,107,129,.25);margin-top:14px">❤️ 부활권 사용 (보유 ${SAVE.revives})</button>`:''}<button class="btn" id="go" style="margin-top:${canRevive?10:16}px">다시 하기</button>`);
   if(canRevive){ const rev=document.getElementById('revive'); if(rev) rev.onclick=()=>{ SFX.buy(); SAVE.revives--; saveGame(true); hide(); G.locked=false; for(let i=0;i<2&&G.grid.length>0;i++)G.grid.pop(); BOARDLAYER=null; toast('❤️ 부활! 아래 두 줄이 사라졌어요'); checkState(); syncUI(); }; } const goBtn=document.getElementById('go'); if(goBtn) goBtn.onclick=()=>{if(!spendLife())return;hide();G.locked=false;G.score=0;buildStage();};
 }
+
 function intro() {
-  // 1. 인트로 화면 띄우기
   const introSc = document.getElementById('introScreen');
   if (introSc) introSc.classList.remove('hidden');
 
-  // 2. 모험 시작 버튼 클릭 시 작동할 내용 한 번에 묶기
   const btnStartAdv = document.getElementById('btnStartAdventure');
   if (btnStartAdv) {
     btnStartAdv.onclick = () => {
-      SFX.click(); // 버튼 효과음 재생
-      if (introSc) introSc.classList.add('hidden'); // 인트로 화면 숨기기
-      G.mode = 'theme'; // 모험 모드 설정
-      openMap(); // 지도 쫙 열기!
+      SFX.click(); 
+      if (introSc) introSc.classList.add('hidden'); 
+      G.mode = 'theme'; 
+      openMap(); 
     };
   }
 }
@@ -490,7 +514,7 @@ function boot(){
   syncMuteBtn(); 
   initCanvas();
   resize(); 
-  try{ if(new URLSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} 
+  try{ if(newSearchParams(location.search).get('testmap')==='1') applyDebugZones(); }catch(e){} 
   G.grid=[]; G.targets=[]; G.cur=null; G.queue=[]; G.locked=true; 
   intro(); 
   requestAnimationFrame(tick); 
