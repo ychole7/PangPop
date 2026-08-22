@@ -56,7 +56,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
 /* ✨ 커스텀 아이템 이미지 적용 (item.jpg 자르기 기법) */
 .item-btn {
   position: relative; width: 62px; height: 62px; border-radius: 50%; border: none;
-  background-image: url('assets/item.jpg'); background-size: 400% 200%;
+  background-image: url('assets/item.png'); background-size: 400% 200%;
   box-shadow: 0 6px 12px rgba(0,0,0,0.6); cursor: pointer; padding: 0;
   transition: transform 0.1s;
 }

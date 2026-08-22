@@ -291,7 +291,7 @@ function tone(freq0,freq1,dur,gain,type,delay){ if(!soundOn())return; const ax=g
 const SFX={ pop(){ tone(520+Math.random()*260,880,0.17,0.07,'triangle'); }, click(){ tone(700,900,0.06,0.05,'square'); }, wordComplete(combo,bonus){ const base=440+Math.min(combo,5)*40; const ratios=bonus?[1,1.26,1.5,2]:[1,1.26,1.5]; ratios.forEach((r,i)=>tone(base*r,base*r*1.15,0.22,0.09,'triangle',i*0.045)); }, miss(){ tone(260,180,0.14,0.045,'sine'); }, rowAdd(){ tone(180,120,0.3,0.06,'sawtooth'); }, stageClear(){ [0,1,2,3].forEach(i=>tone(523.25*Math.pow(2,i/12*4), null, 0.28,0.08,'triangle',i*0.11)); }, gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); }, buy(){ tone(700,1100,0.14,0.07,'triangle'); tone(1050,1400,0.16,0.06,'triangle',0.06); } };
 
 // ✨ 대포, 구슬, 아이템 이미지를 모두 불러옵니다.
-const ASSET_SRC={ cannon:'assets/canon.png', balls:'assets/ball.jpg', items:'assets/item.jpg' };
+const ASSET_SRC={ cannon:'assets/cannon.png', balls:'assets/ball.png', items:'assets/item.png' };
 const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{ const i=new Image(); i.onload=()=>{ASSETS[k]=i;res();}; i.onerror=()=>{res();}; i.src=src; }))); }
 
 function drawBubbleRaw(x,y,r,s,col,glow,special){
