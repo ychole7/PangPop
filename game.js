@@ -1,8 +1,7 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 크래시 완벽 방지 & 인트로 최적화
+   낱글자 팡팡! — 크래시 완전 해결 & 최종 에셋 엔진
    ══════════════════════════════════════════ */
 
-// ✨ 1순위: 게임 저장 데이터를 제일 위로 올려서 버그 원천 차단!
 const SAVE_KEY='pangpop_save_v1';
 function loadSave(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw) return null; const d=JSON.parse(raw); if(!d.free) d.free={stage:1,score:0,bestScore:0,bestStage:1}; if(!d.theme) d.theme={stage:1,score:0,bestScore:0,bestStage:1,levelStars:{}}; if(typeof d.coins!=='number') d.coins=0; if(typeof d.revives!=='number') d.revives=0; if(typeof d.totalStars!=='number') d.totalStars=0; if(!d.lives) d.lives={count:6,lastUpdate:Date.now()}; return d; }catch(e){ return null; } }
 let SAVE = loadSave() || { free:{stage:1,score:0,bestScore:0,bestStage:1}, theme:{stage:1,score:0,bestScore:0,bestStage:1,levelStars:{}}, lastMode:'theme', coins:0, revives:0, totalStars:0, lives:{count:6,lastUpdate:Date.now()} };
@@ -11,7 +10,6 @@ function computeLives(){ let s=SAVE.lives; if(!s){ s=SAVE.lives={count:MAX_LIVES
 function secToNextLife(){ const s=computeLives(); return s.count>=MAX_LIVES ? 0 : Math.max(0, LIFE_REGEN_MS - (Date.now()-s.lastUpdate)) / 1000; }
 function spendLife(){ const s=computeLives(); if(s.count<=0){ const sec=Math.ceil(secToNextLife()); show(`<h2>하트가 없어요 ❤️</h2><p>다음 하트까지 <b>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</b></p><p style="font-size:13px;opacity:.75;margin-top:6px">1분마다 하트가 하나씩 채워져요 (최대 ${MAX_LIVES}개)</p><button class="btn" id="livesOk">확인</button>`); document.getElementById('livesOk').onclick=()=>{ SFX.click(); hide(); }; return false; } s.count--; saveGame(true); return true; }
 let _saveTimer=null; function saveGame(immediate){ const write=()=>{ try{ const slot=SAVE[G.mode]||(SAVE[G.mode]={stage:1,score:0,bestScore:0,bestStage:1}); slot.stage=G.stage; slot.score=G.score; slot.bestScore=Math.max(slot.bestScore||0, G.score); slot.bestStage=Math.max(slot.bestStage||1, G.stage); SAVE.lastMode=G.mode; localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }; if(immediate){ clearTimeout(_saveTimer); write(); } else{ clearTimeout(_saveTimer); _saveTimer=setTimeout(write,500); } }
-
 
 const DICT_BY_CAT = {
   '과일': ['사과','포도','딸기','수박','참외','자두','바나나','오렌지','레몬','복숭아','체리','망고','멜론','키위','앵두','살구','자몽','석류','토마토','대추','모과','매실','앵도','귤','감','배','밤','파인애플','블루베리','무화과','한라봉','청포도','머루','다래'],
@@ -179,7 +177,7 @@ function openCells(){
   for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++){
     if(!at(c,r))continue;
     for(const [nc,nr] of nbrs(c,r)){ if(nr<0||nr>=G.maxRows||nc<0||nc>=cellsIn(nr)||(nr<G.grid.length&&G.grid[nr][nc]))continue;
-      const k=nc+nr; if(!seen.has(k)){ seen.add(k); out.push([nc,nr]); } }
+      const k=nc+','+nr; if(!seen.has(k)){ seen.add(k); out.push([nc,nr]); } }
   } return out;
 }
 function completionsFor(s){ const res=[]; for(const [c,r] of openCells()){ const w=findWord(c,r,s); if(w)res.push({c,r,...w}); } return res; }
@@ -450,6 +448,8 @@ function shopHTML(){
 function wireShop(){ if(card)card.querySelectorAll('button[data-id]').forEach(btn=>{ btn.onclick=()=>{ const it=SHOP_ITEMS.find(x=>x.id===btn.dataset.id); if(!it) return; const coins=SAVE.coins||0; if(coins<it.price) return; SAVE.coins=coins-it.price; it.apply(); saveGame(true); SFX.buy(); syncUI(); show(shopHTML()); wireShop(); }; }); const sc=document.getElementById('shopClose'); if(sc)sc.onclick=()=>{ SFX.click(); hide(); G.locked=false; }; }
 function calcStars(){ const goal = G.mode==='theme' ? G.targets.length : G.freeGoal; const ratio = Math.max(goal, Math.ceil(goal*1.3))/Math.max(1, G.shots); if(ratio>=0.85) return 3; if(ratio>=0.55) return 2; return 1; }
 function starRow(n){ let out=''; for(let i=0;i<3;i++) out+= i<n ? '<span style="color:#ffe08c;text-shadow:0 0 12px #ffb15c">★</span>' : '<span style="color:rgba(255,255,255,.25)">★</span>'; return `<div style="font-size:34px;letter-spacing:6px;margin:8px 0">${out}</div>`; }
+
+// ✨ 여기서부터 완전히 복구된 게임 핵심 함수들입니다!
 function win(){
   G.locked=true;G.score+=1000; const stars=calcStars(), isMilestone=G.mode==='theme'&&G.stage%MILESTONE_EVERY===0, isFinal=G.mode==='theme'&&G.stage===MAX_STAGE, milestoneBonus=isFinal?1000:(isMilestone?200:0), coinGain=30+G.stage*4+stars*15+milestoneBonus; SAVE.coins=(SAVE.coins||0)+coinGain;
   if(G.mode==='theme'){ if(!SAVE.theme.levelStars) SAVE.theme.levelStars={}; const prev=SAVE.theme.levelStars[G.stage]||0; if(stars>prev){ SAVE.totalStars=(SAVE.totalStars||0)+(stars-prev); SAVE.theme.levelStars[G.stage]=stars; } }else{ SAVE.totalStars=(SAVE.totalStars||0)+stars; } saveGame(true); SFX.stageClear(); addShake(8+stars*2); flash(0.3);
@@ -459,6 +459,7 @@ function win(){
   const btnGo=document.getElementById('go'); if(btnGo) btnGo.onclick=()=>{ SFX.click(); if(G.mode==='theme'){ G.stage=Math.min(G.stage+1, MAX_STAGE); } else{ G.stage++; } hide();G.locked=false;buildStage();saveGame(true); };
   const toMapBtn=document.getElementById('toMap'); if(toMapBtn) toMapBtn.onclick=(ev)=>{ ev.preventDefault(); SFX.click(); hide(); G.locked=true; openMap(); };
 }
+
 function lose(){
   G.locked=true; SFX.gameOver(); const canRevive=(SAVE.revives||0)>0;
   show(`<h2>아쉬워요!</h2><p>버블이 바닥까지 내려왔어요.<br>스테이지 ${G.stage} · ${G.score.toLocaleString()}점</p>${canRevive?`<button class="btn" id="revive" style="border-color:#ff6b81;color:#ffe0e6;text-shadow:0 0 10px #ff6b81;box-shadow:0 0 16px rgba(255,107,129,.55),inset 0 0 14px rgba(255,107,129,.25);margin-top:14px">❤️ 부활권 사용 (보유 ${SAVE.revives})</button>`:''}<button class="btn" id="go" style="margin-top:${canRevive?10:16}px">다시 하기</button>`);
@@ -478,6 +479,17 @@ function intro() {
       openMap(); 
     };
   }
+}
+
+function startGame(resume, atStage){ 
+  if(typeof atStage==='number'){ 
+    G.stage=atStage; G.score=0; 
+  }else if(resume){ 
+    const slot=SAVE[G.mode]; G.stage=slot?Math.max(1,slot.stage):1; G.score=slot?(slot.score||0):0; 
+  }else{ 
+    G.stage=1; G.score=0; 
+  } 
+  G.started=true; buildStage(); G.locked=false; saveGame(true); 
 }
 
 let _mapLivesTimer=null;
@@ -501,6 +513,8 @@ function openMap(_isRetry){
   requestAnimationFrame(()=>{ const nextEl=scrollEl.querySelector('.mnode.next')||scrollEl.querySelector('.mnode.done:last-of-type'); if(nextEl) nextEl.scrollIntoView({block:'center'}); });
   scrollEl.querySelectorAll('.mnode').forEach(el=>{ el.onclick=()=>{ const lv=+el.dataset.lv; if(el.classList.contains('locked') || !spendLife()) return; SFX.click(); document.getElementById('mapVeil').classList.remove('on'); clearInterval(_mapLivesTimer); G.mode='theme'; startGame(false, lv); }; });
 }
+
+function applyDebugZones(){ const ls=SAVE.theme.levelStars||(SAVE.theme.levelStars={}); for(let i=1;i<=Math.max(1, MAX_STAGE-1);i++){ if(ls[i]==null) ls[i]=3; } }
 
 function boot(){ 
   syncMuteBtn(); 

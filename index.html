@@ -29,13 +29,21 @@
       <div class="stat-pill">❤️<b id="uiLives">6</b></div>
       <div class="stat-pill">💰<b id="uiCoins">0</b></div>
     </div>
+    
+    <!-- ✨ 나무 홈에 딱 맞춘 3등분 정밀 레이아웃 -->
     <div class="top-board-row">
-      <div class="side-info">스테이지<br><b id="uiStage" class="big-num">1</b></div>
-      <div class="center-info">
+      <div class="side-box">
+        <div class="side-title">스테이지</div>
+        <b id="uiStage" class="big-num">1</b>
+      </div>
+      <div class="center-box">
         <div class="target-title">목표 단어</div>
         <div id="targetBar"></div>
       </div>
-      <div class="side-info">점수<br><b id="uiScoreBig" class="big-num">0</b></div>
+      <div class="side-box">
+        <div class="side-title">점수</div>
+        <b id="uiScoreBig" class="big-num">0</b>
+      </div>
     </div>
   </div>
 
@@ -46,7 +54,6 @@
 
   <!-- 하단 UI (아이템 패널) -->
   <div id="bottomUI">
-    <!-- ✨ 글씨 대신 item.jpg 이미지가 들어가도록 변경 -->
     <button class="item-btn" id="btnHint"><div class="badge" id="uiHint">3</div></button>
     <button class="item-btn" id="btnSwap"><div class="badge" id="uiSwap">3</div></button>
     <button class="item-btn" id="btnBomb"><div class="badge" id="uiBomb">2</div></button>
