@@ -1,6 +1,17 @@
 /* ══════════════════════════════════════════
-   낱글자 팡팡! — 크래시 버그 완벽 수정 버전
+   낱글자 팡팡! — 크래시 완벽 방지 & 인트로 최적화
    ══════════════════════════════════════════ */
+
+// ✨ 1순위: 게임 저장 데이터를 제일 위로 올려서 버그 원천 차단!
+const SAVE_KEY='pangpop_save_v1';
+function loadSave(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw) return null; const d=JSON.parse(raw); if(!d.free) d.free={stage:1,score:0,bestScore:0,bestStage:1}; if(!d.theme) d.theme={stage:1,score:0,bestScore:0,bestStage:1,levelStars:{}}; if(typeof d.coins!=='number') d.coins=0; if(typeof d.revives!=='number') d.revives=0; if(typeof d.totalStars!=='number') d.totalStars=0; if(!d.lives) d.lives={count:6,lastUpdate:Date.now()}; return d; }catch(e){ return null; } }
+let SAVE = loadSave() || { free:{stage:1,score:0,bestScore:0,bestStage:1}, theme:{stage:1,score:0,bestScore:0,bestStage:1,levelStars:{}}, lastMode:'theme', coins:0, revives:0, totalStars:0, lives:{count:6,lastUpdate:Date.now()} };
+const MAX_LIVES=6, LIFE_REGEN_MS=60000;
+function computeLives(){ let s=SAVE.lives; if(!s){ s=SAVE.lives={count:MAX_LIVES,lastUpdate:Date.now()}; } if(s.count<MAX_LIVES){ const regen=Math.floor((Date.now()-s.lastUpdate)/LIFE_REGEN_MS); if(regen>0){ s.count=Math.min(MAX_LIVES, s.count+regen); s.lastUpdate+=regen*LIFE_REGEN_MS; if(s.count>=MAX_LIVES) s.lastUpdate=Date.now(); } }else{ s.lastUpdate=Date.now(); } return s; }
+function secToNextLife(){ const s=computeLives(); return s.count>=MAX_LIVES ? 0 : Math.max(0, LIFE_REGEN_MS - (Date.now()-s.lastUpdate)) / 1000; }
+function spendLife(){ const s=computeLives(); if(s.count<=0){ const sec=Math.ceil(secToNextLife()); show(`<h2>하트가 없어요 ❤️</h2><p>다음 하트까지 <b>${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</b></p><p style="font-size:13px;opacity:.75;margin-top:6px">1분마다 하트가 하나씩 채워져요 (최대 ${MAX_LIVES}개)</p><button class="btn" id="livesOk">확인</button>`); document.getElementById('livesOk').onclick=()=>{ SFX.click(); hide(); }; return false; } s.count--; saveGame(true); return true; }
+let _saveTimer=null; function saveGame(immediate){ const write=()=>{ try{ const slot=SAVE[G.mode]||(SAVE[G.mode]={stage:1,score:0,bestScore:0,bestStage:1}); slot.stage=G.stage; slot.score=G.score; slot.bestScore=Math.max(slot.bestScore||0, G.score); slot.bestStage=Math.max(slot.bestStage||1, G.stage); SAVE.lastMode=G.mode; localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }; if(immediate){ clearTimeout(_saveTimer); write(); } else{ clearTimeout(_saveTimer); _saveTimer=setTimeout(write,500); } }
+
 
 const DICT_BY_CAT = {
   '과일': ['사과','포도','딸기','수박','참외','자두','바나나','오렌지','레몬','복숭아','체리','망고','멜론','키위','앵두','살구','자몽','석류','토마토','대추','모과','매실','앵도','귤','감','배','밤','파인애플','블루베리','무화과','한라봉','청포도','머루','다래'],
@@ -18,7 +29,6 @@ for (const c of CATS) for (const w of DICT_BY_CAT[c]) if (w.length>=2) DICT.set(
 for (const w of BONUS_WORDS) DICT.set(w,'보너스');
 for (const w of GENERIC_WORDS) if (w.length>=2 && !DICT.has(w)) DICT.set(w,'생활');
 
-// ✨ 색상 복구! (이미지가 로드 안 됐을 때 뻗지 않도록 예비 팔레트 추가)
 const PALETTE = [
   ['#ffda44','#f9a400'], ['#69d845','#36a61d'], ['#45a1ff','#1f68e0'], ['#b852ff','#7b26e0'], ['#ff629c','#e02660'],
   ['#ff9436','#e0540d'], ['#42dbd8','#1da6a4'], ['#ff4242','#d61c1c'], ['#6042ff','#261cd6'], ['#b4ff42','#7ed61c']
@@ -169,7 +179,7 @@ function openCells(){
   for(let r=0;r<G.grid.length;r++) for(let c=0;c<cellsIn(r);c++){
     if(!at(c,r))continue;
     for(const [nc,nr] of nbrs(c,r)){ if(nr<0||nr>=G.maxRows||nc<0||nc>=cellsIn(nr)||(nr<G.grid.length&&G.grid[nr][nc]))continue;
-      const k=nc+','+nr; if(!seen.has(k)){ seen.add(k); out.push([nc,nr]); } }
+      const k=nc+nr; if(!seen.has(k)){ seen.add(k); out.push([nc,nr]); } }
   } return out;
 }
 function completionsFor(s){ const res=[]; for(const [c,r] of openCells()){ const w=findWord(c,r,s); if(w)res.push({c,r,...w}); } return res; }
@@ -289,11 +299,10 @@ function burst(x,y,col){ for(let i=0;i<14;i++){ const p=getParticle(); if(!p) co
 function toast(text,cells){ let x=W/2,y=H*0.34; if(cells&&cells.length){ x=cells.reduce((a,[c,r])=>a+cx(c,r),0)/cells.length; y=cells.reduce((a,[c,r])=>a+cy(r),0)/cells.length; } G.toasts.push({text,x,y,life:1}); }
 
 let actx=null; function getActx(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); return actx; }catch(e){ return null; } }
-function soundOn(){ return SAVE.soundOn!==false; }
+function soundOn(){ return SAVE && SAVE.soundOn!==false; }
 function tone(freq0,freq1,dur,gain,type,delay){ if(!soundOn())return; const ax=getActx(); if(!ax)return; try{ const t0=ax.currentTime+(delay||0); const o=ax.createOscillator(),g=ax.createGain(); o.type=type||'triangle'; o.frequency.setValueAtTime(freq0,t0); if(freq1) o.frequency.exponentialRampToValueAtTime(freq1,t0+dur*0.55); g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(gain,t0+0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur); o.connect(g); g.connect(ax.destination); o.start(t0); o.stop(t0+dur+0.02); }catch(e){} }
 const SFX={ pop(){ tone(520+Math.random()*260,880,0.17,0.07,'triangle'); }, click(){ tone(700,900,0.06,0.05,'square'); }, wordComplete(combo,bonus){ const base=440+Math.min(combo,5)*40; const ratios=bonus?[1,1.26,1.5,2]:[1,1.26,1.5]; ratios.forEach((r,i)=>tone(base*r,base*r*1.15,0.22,0.09,'triangle',i*0.045)); }, miss(){ tone(260,180,0.14,0.045,'sine'); }, rowAdd(){ tone(180,120,0.3,0.06,'sawtooth'); }, stageClear(){ [0,1,2,3].forEach(i=>tone(523.25*Math.pow(2,i/12*4), null, 0.28,0.08,'triangle',i*0.11)); }, gameOver(){ tone(300,90,0.6,0.08,'sawtooth'); }, buy(){ tone(700,1100,0.14,0.07,'triangle'); tone(1050,1400,0.16,0.06,'triangle',0.06); } };
 
-// ✨ 파일 이름들 모두 .png로 매핑 완료!
 const ASSET_SRC={ cannon:'assets/cannon.png', balls:'assets/ball.png', items:'assets/item.png' };
 const ASSETS={}; function loadAssets(){ return Promise.all(Object.entries(ASSET_SRC).map(([k,src])=>new Promise(res=>{ const i=new Image(); i.onload=()=>{ASSETS[k]=i;res();}; i.onerror=()=>{res();}; i.src=src; }))); }
 
