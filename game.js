@@ -361,6 +361,14 @@ function syncMuteBtn(){ const b=document.getElementById('btnMute'); if(b) b.text
 window.addEventListener('load', () => {
   const btnMenu=document.getElementById('btnMenu'); if(btnMenu) btnMenu.onclick=()=>{
     if(veil.classList.contains('on'))return; G.locked=true;
+// 인트로 화면의 모험 시작 버튼 클릭 이벤트
+  const btnStartAdv = document.getElementById('btnStartAdventure');
+  if(btnStartAdv) btnStartAdv.onclick = () => {
+    SFX.click();
+    document.getElementById('introScreen').classList.add('hidden'); // 인트로 화면 숨기기
+    G.mode = 'theme';
+    openMap(); // 지도로 넘어가기!
+  };
     const info = `<p>주제: <b>${G.goal}</b> · 스테이지 ${G.stage}</p> <div>${G.targets.map(w=>`<span class="tchip" style="margin:2px;${G.done[w]?'border-color:#7cffb2;color:#eafff3;text-shadow:0 0 8px #7cffb2':''}">${G.done[w]?'✓ ':''}${w}</span>`).join('')}</div>`;
     show(`<h2>메뉴</h2>${info}<button class="btn" id="go">이어서 하기</button><p style="margin-top:12px;font-size:14px"><a href="#" id="switch" style="color:#d9a94a">🗺️ 지도로 이동</a> &nbsp;·&nbsp; <a href="#" id="restart" style="color:#ff9a5c">이 스테이지 재시작</a></p><button class="btn" id="goShop" style="margin-top:10px;border-color:#ffd86f;color:#fff6d8;text-shadow:0 0 8px #ffd86f;box-shadow:0 0 14px rgba(255,216,111,.5),inset 0 0 12px rgba(255,216,111,.22);padding:9px 22px;font-size:15px">🛒 상점 (💰${(SAVE.coins||0).toLocaleString()})</button>`);
     document.getElementById('go').onclick=()=>{hide();G.locked=false;}; document.getElementById('switch').onclick=ev=>{ev.preventDefault();hide();openMap();}; document.getElementById('restart').onclick=ev=>{ev.preventDefault();if(!spendLife())return;hide();startGame(false, G.stage);}; document.getElementById('goShop').onclick=()=>{ SFX.click(); openShop(); };
@@ -428,9 +436,9 @@ function lose(){
   if(canRevive){ const rev=document.getElementById('revive'); if(rev) rev.onclick=()=>{ SFX.buy(); SAVE.revives--; saveGame(true); hide(); G.locked=false; for(let i=0;i<2&&G.grid.length>0;i++)G.grid.pop(); BOARDLAYER=null; toast('❤️ 부활! 아래 두 줄이 사라졌어요'); checkState(); syncUI(); }; } const goBtn=document.getElementById('go'); if(goBtn) goBtn.onclick=()=>{if(!spendLife())return;hide();G.locked=false;G.score=0;buildStage();};
 }
 function intro(){
-  const bestLine = SAVE.theme.bestScore ? `<p style="font-size:13px;opacity:.75;margin-top:6px">최고점수 <b>${(SAVE.theme.bestScore||0).toLocaleString()}</b></p><p style="font-size:13px;opacity:.8;margin-top:2px">⭐ 모은 별 <b style="color:#ffe08c">${SAVE.totalStars||0}</b>개</p>` : '';
-  show(`<h2>낱글자 팡팡!</h2><p>버블을 쏘아 <b>가로·대각선</b>으로<br>낱글자를 이어 단어를 만들면 팡!</p>${bestLine}<button class="btn" id="mTheme" style="display:block;margin:16px auto 0;font-size:20px;padding:14px 32px">🗺️ 모험 시작하기</button><p style="font-size:13px;opacity:.7;margin:6px 0 0">주제별 목표 단어를 완성하며 100단계까지! (계속 늘어날 예정)</p>`);
-  const mTheme=document.getElementById('mTheme'); if(mTheme) mTheme.onclick=()=>{ SFX.click(); G.mode='theme'; hide(); openMap(); };
+  // 낡은 팝업창 대신, 우리가 만든 전체화면 인트로를 보여줍니다!
+  const introSc = document.getElementById('introScreen');
+  if(introSc) introSc.classList.remove('hidden');
 }
 
 let _mapLivesTimer=null;
