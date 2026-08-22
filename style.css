@@ -25,7 +25,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
 /* 배경 */
 #bgLayer { position: absolute; inset: 0; z-index: 0; background: url('assets/bg_main.png') center / cover no-repeat; }
 
-/* 상단 UI 보정 (나무판 홈에 글씨가 쏙 들어가도록) */
+/* 상단 UI 보정 */
 #topUI {
   position: absolute; top: 0; left: 0; width: 100%; height: 180px; z-index: 10;
   background: url('assets/ui_top.png') center bottom / 100% 100% no-repeat;
@@ -33,7 +33,7 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
   padding-top: max(10px, env(safe-area-inset-top));
 }
 .top-menu-row { display: flex; gap: 8px; padding: 0 16px; justify-content: flex-start; align-items: center; }
-.top-board-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 26px; margin-top: 25px; /* 나무판 위치로 내림 */ }
+.top-board-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 26px; margin-top: 25px; }
 .side-info { text-align: center; color: #6a401c; font-size: 13px; font-weight: 900; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
 .big-num { font-size: 26px; display: block; margin-top: 2px; }
 .center-info { flex: 1; display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
@@ -53,18 +53,20 @@ body{font-family:'Pretendard',system-ui,sans-serif;color:var(--ink);font-weight:
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ✨ 커스텀 아이템 이미지 적용 (item.jpg 자르기 기법) */
+/* ✨ 커스텀 아이템 이미지 적용 (하얀 배경 강제 제거) */
 .item-btn {
-  position: relative; width: 62px; height: 62px; border-radius: 50%; border: none;
+  position: relative; width: 62px; height: 62px; border-radius: 50%;
+  border: none !important; /* 기존 테두리 제거 */
+  background-color: transparent !important; /* ✨ 하얀색 동그라미 제거의 핵심! */
   background-image: url('assets/item.png'); background-size: 400% 200%;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.6); cursor: pointer; padding: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; padding: 0;
   transition: transform 0.1s;
 }
-.item-btn:active { transform: translateY(4px); box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+.item-btn:active { transform: translateY(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 .item-btn[disabled] { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
 .item-btn.active { box-shadow: 0 0 20px rgba(255,215,106,0.9); animation: pulseStart 1s infinite; }
 
-/* 아이템 이미지 위치 매핑 (1열의 4개 아이콘 사용) */
+/* 아이템 이미지 위치 매핑 */
 #btnRainbow { background-position: 0% 0%; }
 #btnBomb { background-position: 33.33% 0%; }
 #btnHint { background-position: 66.66% 0%; }
